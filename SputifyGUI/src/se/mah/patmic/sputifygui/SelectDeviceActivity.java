@@ -17,7 +17,7 @@ import android.widget.TextView;
 import android.widget.AdapterView.OnItemClickListener;
 
 /**
- * Klassen används för att välja ett item i en lista. I detta fall ska man välja
+ * Klassen anvï¿½nds fï¿½r att vï¿½lja ett item i en lista. I detta fall ska man vï¿½lja
  * en bluetooth enhet och skicka tillbaka adressen.
  * 
  * @author Patrik
@@ -26,17 +26,17 @@ import android.widget.AdapterView.OnItemClickListener;
 public class SelectDeviceActivity extends Activity {
 	private static String TAG = "SelectDeviceActivity";
 
-	// För att hämta adressen till den valda enheten
+	// Fï¿½r att hï¿½mta adressen till den valda enheten
 	public static String EXTRA_DEVICE_ADRESS = "se.mah.ad1107.device_adress";
 
-	// Används för att listan
+	// Anvï¿½nds fï¿½r att listan
 	private BluetoothAdapter mBtAdapter;
 	private ArrayAdapter<String> mPairedDevicesArrayAdapter;
 	private ListView listView;
 	private BluetoothService
 
 	/**
-	 * Anropas när aktiviten skapas. Skapar listan och lägger till items i
+	 * Anropas nï¿½r aktiviten skapas. Skapar listan och lï¿½gger till items i
 	 * listan.
 	 */
 	@Override
@@ -59,30 +59,30 @@ public class SelectDeviceActivity extends Activity {
 						+ device.getAddress());
 			}
 		} else {
-			// Lägg till Meddelende ifall det inte finns några parade enheter
+			// Lï¿½gg till Meddelende ifall det inte finns nï¿½gra parade enheter
 		}
 		listView.setOnItemClickListener(mDeviceClickListener);
 	}
 
 	/**
-	 * En lysnnare för vad som ska hända när man klickar på ett item i listan.
-	 * Skickar tillbaka en sträng som innehåller en adress till en bluetooth
+	 * En lysnnare fï¿½r vad som ska hï¿½nda nï¿½r man klickar pï¿½ ett item i listan.
+	 * Skickar tillbaka en strï¿½ng som innehï¿½ller en adress till en bluetooth
 	 * device till den aktiviten som startade denna.
 	 */
 	private OnItemClickListener mDeviceClickListener = new OnItemClickListener() {
 		public void onItemClick(AdapterView<?> av, View v, int arg2, long arg3) {
 
-			// Hämta Mac adressen för enhenten man har valt. Den är de sista 17
+			// Hï¿½mta Mac adressen fï¿½r enhenten man har valt. Den ï¿½r de sista 17
 			// tecknena i TextViewn
 			String info = ((TextView) v).getText().toString();
-			String address = info.substring(info.length() - 17); // Adressen är
+			String address = info.substring(info.length() - 17); // Adressen ï¿½r
 																	// de sista
 																	// 17
 																	// teckena i
-																	// strängen
+																	// strï¿½ngen
 			Log.d(TAG, info + "\n" + address);
 
-			// Skapar en intent så att man kan skicka tillbaka data
+			// Skapar en intent sï¿½ att man kan skicka tillbaka data
 			Intent intent = new Intent(SelectDeviceActivity.this, PlaylistActivity.class);
 			intent.putExtra(EXTRA_DEVICE_ADRESS, address);
 			Log.d(TAG,
@@ -90,7 +90,7 @@ public class SelectDeviceActivity extends Activity {
 							+ intent.getExtras().getString(EXTRA_DEVICE_ADRESS));
 			
 
-//			// Sätt resultatet till ok och skicka tillbaka datan
+//			// Sï¿½tt resultatet till ok och skicka tillbaka datan
 //			setResult(RESULT_OK, intent);
 //			finish();
 			
