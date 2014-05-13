@@ -13,7 +13,7 @@ tmp/
 local.properties
 .settings/
 .loadpath
-R.java
+gen/
 
 # External tool builders
 .externalToolBuilders/
