@@ -3,13 +3,13 @@ package se.mah.patmic.sputifygui;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.io.Serializable;
 import java.util.UUID;
 
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothSocket;
 import android.content.Context;
-import android.os.Handler;
 import android.util.Log;
 
 /**
@@ -315,6 +315,7 @@ public class BluetoothService {
 		@Override
 		public void run() {
 			Log.i(TAG, "Run manageConnectionThread");
+			write("Connection Sucessfull".getBytes()); // Skriver ett meddelande till bluetooth moduen
 
 			byte[] buffer = new byte[1024]; // En buffert f�r att lagra den data
 											// som ska skickas. Storleken

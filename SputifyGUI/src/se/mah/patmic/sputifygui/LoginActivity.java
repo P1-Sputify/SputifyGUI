@@ -31,8 +31,8 @@ public class LoginActivity extends ActionBarActivity {
 				String inUsername = editUser.getText().toString();
 				String inPassword = editPassword.getText().toString();
 				if(inUsername.equals(username) && inPassword.equals(password)) {
-//					Intent intent = new Intent(LoginActivity.this, SelectDeviceActivity.class);
-					Intent intent = new Intent(LoginActivity.this, PlaylistActivity.class);
+					Intent intent = new Intent(LoginActivity.this, SelectDeviceActivity.class);
+//					Intent intent = new Intent(LoginActivity.this, PlaylistActivity.class);
 					startActivity(intent);
 				}
 			}

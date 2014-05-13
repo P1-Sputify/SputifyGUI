@@ -1,5 +1,6 @@
 package se.mah.patmic.sputifygui;
 
+import android.content.Intent;
 import android.os.Bundle;
 import android.support.v7.app.ActionBarActivity;
 import android.view.Menu;
@@ -22,8 +23,6 @@ public class PlaylistActivity extends ActionBarActivity {
 			adapter.add(testlist[i]);
 		}
 		listView.setAdapter(adapter);
-		
-		
 	}
 
 	@Override
