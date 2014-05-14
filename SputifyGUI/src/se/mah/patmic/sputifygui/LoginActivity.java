@@ -1,7 +1,12 @@
 package se.mah.patmic.sputifygui;
 
+import se.mah.patmic.sputifygui.TCPService.TCPBinder;
+import android.content.ComponentName;
+import android.content.Context;
 import android.content.Intent;
+import android.content.ServiceConnection;
 import android.os.Bundle;
+import android.os.IBinder;
 import android.support.v7.app.ActionBarActivity;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -11,16 +16,25 @@ import android.widget.Button;
 import android.widget.EditText;
 
 public class LoginActivity extends ActionBarActivity {
+	private String ipAddress = ""; //TODO add ip-address
+	private int portNr = 57005;
 	private String username = "test";
 	private String password = "pw";
 	private EditText editUser;
 	private EditText editPassword;
 	private Button loginButton;
+	TCPService tcpService;
+    boolean bound = false;
+
 	
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.activity_login);
+		
+		Intent intent = new Intent(this, TCPService.class);
+        bindService(intent, connection, Context.BIND_AUTO_CREATE);
+
 		editUser = (EditText)findViewById(R.id.Edit_UserName);
 		editPassword = (EditText)findViewById(R.id.Edit_Password);
 		
@@ -62,4 +76,19 @@ public class LoginActivity extends ActionBarActivity {
 		}
 		return super.onOptionsItemSelected(item);
 	}
+	
+	private ServiceConnection connection = new ServiceConnection() {
+		
+		@Override
+		public void onServiceDisconnected(ComponentName arg0) {
+			bound = false;
+		}
+		
+		@Override
+		public void onServiceConnected(ComponentName arg0, IBinder arg1) {
+			TCPBinder binder = (TCPBinder) arg1;
+			tcpService = binder.getService();
+			bound = true;
+		}
+	};
 }
