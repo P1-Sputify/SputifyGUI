@@ -16,43 +16,67 @@ import android.widget.Button;
 import android.widget.EditText;
 
 public class LoginActivity extends ActionBarActivity {
-	private String ipAddress = ""; //TODO add ip-address
+	private String ipAddress = "195.178.234.227";
 	private int portNr = 57005;
-	private String username = "test";
-	private String password = "pw";
 	private EditText editUser;
 	private EditText editPassword;
 	private Button loginButton;
 	TCPService tcpService;
-    boolean bound = false;
+	boolean bound = false;
+	private Intent tcpIntent;
 
-	
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.activity_login);
-		
-		Intent intent = new Intent(this, TCPService.class);
-        bindService(intent, connection, Context.BIND_AUTO_CREATE);
 
-		editUser = (EditText)findViewById(R.id.Edit_UserName);
-		editPassword = (EditText)findViewById(R.id.Edit_Password);
-		
-		loginButton = (Button)findViewById(R.id.button_login);
+		tcpIntent = new Intent(this, TCPService.class);
+
+		editUser = (EditText) findViewById(R.id.Edit_UserName);
+		editPassword = (EditText) findViewById(R.id.Edit_Password);
+
+		loginButton = (Button) findViewById(R.id.button_login);
 		loginButton.setOnClickListener(new OnClickListener() {
 			@Override
 			public void onClick(View v) {
 				String inUsername = editUser.getText().toString();
 				String inPassword = editPassword.getText().toString();
-				if(inUsername.equals(username) && inPassword.equals(password)) {
+				int res = tcpService.login(inUsername, inPassword);
+
+				while (res == TCPService.ATTEMPTING_TO_CONNECT) {
+					// TODO add connecting to server message
+					try {
+						Thread.sleep(100);
+					} catch (InterruptedException e) {
+						e.printStackTrace();
+					}
+					res = tcpService.login(inUsername, inPassword);
+				}
+				if (res == TCPService.NOT_CONNECTED) {
+					// TODO add not connected error
+					return;
+				} else if (res == TCPService.LOGGED_IN){
 					Intent intent = new Intent(LoginActivity.this, SelectDeviceActivity.class);
-//					Intent intent = new Intent(LoginActivity.this, PlaylistActivity.class);
+					// Intent intent = new Intent(LoginActivity.this, PlaylistActivity.class);
 					startActivity(intent);
+				} else if (res == TCPService.NOT_LOGGED_IN) {
+					// TODO wrong user/pass message
 				}
 			}
 		});
-		
-
+	}
+	
+	@Override
+	protected void onPause() {
+		super.onPause();
+		unbindService(connection);
+	}
+	
+	@Override
+	protected void onResume() {
+		super.onResume();
+		bindService(tcpIntent, connection, Context.BIND_AUTO_CREATE);
+		tcpService.connectToServer(ipAddress, portNr);
 	}
 
 	@Override
@@ -62,8 +86,6 @@ public class LoginActivity extends ActionBarActivity {
 		getMenuInflater().inflate(R.menu.login, menu);
 		return true;
 	}
-	
-	
 
 	@Override
 	public boolean onOptionsItemSelected(MenuItem item) {
@@ -76,14 +98,14 @@ public class LoginActivity extends ActionBarActivity {
 		}
 		return super.onOptionsItemSelected(item);
 	}
-	
+
 	private ServiceConnection connection = new ServiceConnection() {
-		
+
 		@Override
 		public void onServiceDisconnected(ComponentName arg0) {
 			bound = false;
 		}
-		
+
 		@Override
 		public void onServiceConnected(ComponentName arg0, IBinder arg1) {
 			TCPBinder binder = (TCPBinder) arg1;
