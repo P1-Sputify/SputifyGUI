@@ -1,6 +1,7 @@
 package se.mah.patmic.sputifygui;
 
 import java.util.Hashtable;
+import java.util.Set;
 
 import se.mah.patmic.sputifygui.TCPService.TCPBinder;
 import server.Track;
@@ -18,7 +19,7 @@ import android.widget.ListView;
 
 public class PlaylistActivity extends ActionBarActivity {
 
-	private String[] testlist = { "track 1", "track 2", "track 3", "track 4", "track 5" };
+	private Track[] tracklist;
 	private Hashtable<Integer, Track> playListHash;
 	private ArrayAdapter<String> adapter;
 	private ListView listView;
@@ -33,24 +34,33 @@ public class PlaylistActivity extends ActionBarActivity {
 
 		tcpIntent = new Intent(this, TCPService.class);
 	}
-	
+
 	@Override
 	protected void onPause() {
 		super.onPause();
 		unbindService(connection);
 	}
-	
+
 	@Override
 	protected void onResume() {
 		super.onResume();
 		bindService(tcpIntent, connection, Context.BIND_AUTO_CREATE);
+		playListHash = tcpService.getPlaylist();
+		if (playListHash != null) {
+			tracklist = new Track[playListHash.size()];
+			Set<Integer> keys = playListHash.keySet();
+			listView = (ListView) findViewById(R.id.playlist);
+			adapter = new ArrayAdapter<>(this, android.R.layout.simple_list_item_1);
+			int counter = 0;
+			for (Integer key : keys) {
+				tracklist[counter++] = playListHash.get(key);
+			}
 
-		listView = (ListView) findViewById(R.id.playlist);
-		adapter = new ArrayAdapter<>(this, android.R.layout.simple_list_item_1);
-		for (int i = 0; i < testlist.length; i++) {
-			adapter.add(testlist[i]);
+			for (int i = 0; i < tracklist.length; i++) {
+				adapter.add(tracklist[i].getName());
+			}
+			listView.setAdapter(adapter);
 		}
-		listView.setAdapter(adapter);
 	}
 
 	@Override
@@ -72,7 +82,7 @@ public class PlaylistActivity extends ActionBarActivity {
 		}
 		return super.onOptionsItemSelected(item);
 	}
-	
+
 	private ServiceConnection connection = new ServiceConnection() {
 
 		@Override
