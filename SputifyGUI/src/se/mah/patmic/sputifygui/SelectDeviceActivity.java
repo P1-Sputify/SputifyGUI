@@ -100,6 +100,22 @@ public class SelectDeviceActivity extends Activity {
 			startActivity(intent);
 		}
 	};
+	/**
+	 * Metoden används för att kontrollera om mobilen har bluetooth och ifall den är aktivierad.
+	 * Den kan även aktivera bluetooth om inte så är fallet
+	 * @return
+	 * 		En boolean som är false om mobilen inte har bluetooth annars true
+	 */
+	public boolean enableBt() {
+		if(BluetoothAdapter.getDefaultAdapter() == null) {
+			return false; // Ifall mobilen inte har bluetooth retunras false.
+		}
+		mBtAdapter = BluetoothAdapter.getDefaultAdapter();
+		if(!BluetoothAdapter.getDefaultAdapter().isEnabled()){
+			mBtAdapter.enable();
+		}
+		return true;
+	}
 
 }
 

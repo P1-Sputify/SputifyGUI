@@ -188,18 +188,18 @@ public class BluetoothService {
 		setState(STATE_NONE);
 	}
 
-	public void write(byte[] out) {
-		// Create temporary object
-		manageConnectionThread r;
-		// Synchronize a copy of the ConnectedThread
-		synchronized (this) {
-			if (mState != STATE_CONNECTED)
-				return;
-			r = mManagConnectionThread;
-		}
-		// Perform the write unsynchronized
-		r.write(out);
-	}
+//	public void write(byte[] out) {
+//		// Create temporary object
+//		manageConnectionThread r;
+//		// Synchronize a copy of the ConnectedThread
+//		synchronized (this) {
+//			if (mState != STATE_CONNECTED)
+//				return;
+//			r = mManagConnectionThread;
+//		}
+//		// Perform the write unsynchronized
+//		r.write(out);
+//	}
 
 	/**
 	 * Sends a message back to the ui that the connection has been lost
@@ -342,7 +342,6 @@ public class BluetoothService {
 		public void write(byte[] buffer) {
 			try {
 				mmOutStream.write(buffer);
-
 				// Share the sent message back to the UI Activity
 				// mHandler.obtainMessage(BluetoothChat.MESSAGE_WRITE, -1, -1,
 				// buffer)
