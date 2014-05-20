@@ -33,11 +33,15 @@ public class TCPConnection {
 	public final static int LOGGING_IN = 22;
 	public final static int LOGGED_IN = 23;
 
+	private int playListStatus = NOT_RECIEVED;
+	public final static int NOT_RECIEVED = 31;
+	public final static int DOWNLOADING = 32;
+	public final static int RECIEVED = 33;
+
 	public TCPConnection(ConnectivityManager connMgr, String ipAddress, int portNr) {
 		this.connMgr = connMgr;
 		this.ipAddress = ipAddress;
 		this.portNr = portNr;
-		connectStatus = ATTEMPTING_TO_CONNECT;
 
 		new Thread(new ConnectTCPThread()).start();
 	}
@@ -45,26 +49,24 @@ public class TCPConnection {
 	public void login(String user, String pass) {
 		this.user = user;
 		this.pass = pass;
-		loginStatus = LOGGING_IN;
-		
+
 		new Thread(new LoginThread()).start();
 	}
 
-	public Hashtable<Integer, Track> getPlaylist() {
-		if (loginStatus == LOGGED_IN) {
+	public Hashtable<Integer, Track> getPlayList() {
+		if (playListStatus == NOT_RECIEVED) {
+			fetchPlayList();
+		}
+		
+		while (playListStatus != RECIEVED) {
 			try {
-				oos.writeObject("send playlist");
-				Object obj = ois.readObject();
-				if (obj instanceof Hashtable) {
-					return (Hashtable<Integer, Track>) obj;
-				}
-			} catch (IOException | ClassNotFoundException e) {
+				Thread.sleep(100);
+			} catch (InterruptedException e) {
 				e.printStackTrace();
 			}
-			return null;
-		} else {
-			return null;
 		}
+		
+		return playList;
 	}
 
 	public int getConnectStatus() {
@@ -75,8 +77,17 @@ public class TCPConnection {
 		return loginStatus;
 	}
 
+	public int getPlayListStatus() {
+		return playListStatus;
+	}
+
+	private void fetchPlayList() {
+		new Thread(new fetchPlayListThread()).start();
+	}
+
 	private class ConnectTCPThread implements Runnable {
 		public void run() {
+			connectStatus = ATTEMPTING_TO_CONNECT;
 			try {
 				NetworkInfo networkInfo = connMgr.getActiveNetworkInfo();
 				while (networkInfo == null || !networkInfo.isConnected()) {
@@ -96,6 +107,7 @@ public class TCPConnection {
 
 	private class LoginThread implements Runnable {
 		public void run() {
+			loginStatus = LOGGING_IN;
 			while (connectStatus == ATTEMPTING_TO_CONNECT) {
 				try {
 					Thread.sleep(100);
@@ -116,6 +128,7 @@ public class TCPConnection {
 					System.out.println("Hit kommer jag?");
 					if (reply.equalsIgnoreCase("login success")) {
 						loginStatus = LOGGED_IN;
+						fetchPlayList();
 						return;
 					} else if (reply.equalsIgnoreCase("login failed")) {
 						loginStatus = NOT_LOGGED_IN;
@@ -129,6 +142,36 @@ public class TCPConnection {
 
 				loginStatus = NOT_LOGGED_IN;
 				return;
+			}
+		}
+	}
+
+	private class fetchPlayListThread implements Runnable {
+		public void run() {
+			playListStatus = DOWNLOADING;
+
+			while (loginStatus == LOGGING_IN) {
+				try {
+					Thread.sleep(100);
+				} catch (InterruptedException e) {
+					e.printStackTrace();
+				}
+			}
+
+			if (loginStatus == LOGGED_IN) {
+				try {
+					oos.writeObject("send playlist");
+					Object obj = ois.readObject();
+					if (obj instanceof Hashtable) {
+						playList = (Hashtable<Integer, Track>) obj;
+						playListStatus = RECIEVED;
+					} else {
+						playListStatus = NOT_RECIEVED;
+					}
+				} catch (IOException | ClassNotFoundException e) {
+					e.printStackTrace();
+					playListStatus = NOT_RECIEVED;
+				}
 			}
 		}
 	}

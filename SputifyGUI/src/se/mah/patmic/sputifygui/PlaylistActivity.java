@@ -4,7 +4,6 @@ import java.util.Hashtable;
 import java.util.Set;
 
 import server.Track;
-import android.content.Intent;
 import android.os.Bundle;
 import android.support.v7.app.ActionBarActivity;
 import android.view.Menu;
@@ -18,14 +17,13 @@ public class PlaylistActivity extends ActionBarActivity {
 	private Hashtable<Integer, Track> playListHash;
 	private ArrayAdapter<String> adapter;
 	private ListView listView;
-	private TCPConnection tcpConnection;
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.activity_playlist);
 
-		playListHash = tcpConnection.getPlaylist();
+		playListHash = LoginActivity.tcpConnection.getPlayList();
 		if (playListHash != null) {
 			tracklist = new Track[playListHash.size()];
 			Set<Integer> keys = playListHash.keySet();
@@ -40,6 +38,8 @@ public class PlaylistActivity extends ActionBarActivity {
 				adapter.add(tracklist[i].getName());
 			}
 			listView.setAdapter(adapter);
+		} else {
+			// TODO no playlist case
 		}
 	}
 

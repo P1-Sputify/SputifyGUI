@@ -18,7 +18,7 @@ public class LoginActivity extends ActionBarActivity {
 	private EditText editUser;
 	private EditText editPassword;
 	private Button loginButton;
-	private TCPConnection tcpConnection;
+	static TCPConnection tcpConnection;
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
