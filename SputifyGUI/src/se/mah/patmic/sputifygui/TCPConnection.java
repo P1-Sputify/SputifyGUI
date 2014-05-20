@@ -52,6 +52,7 @@ public class TCPConnection {
 			try {
 				oos.writeObject(loginArray);
 				String reply = (String) ois.readObject();
+				System.out.println("Hit kommer jag?");
 				if (reply.equalsIgnoreCase("login success")) {
 					loginStatus = LOGGED_IN;
 					return loginStatus;
