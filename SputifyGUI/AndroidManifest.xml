@@ -43,9 +43,5 @@
                 android:name="android.support.PARENT_ACTIVITY"
                 android:value="se.mah.patmic.sputifygui.SelectDeviceActivity" />
         </activity>
-        <service android:name="TCPService"
-            android:exported="false">
-        </service>
     </application>
-
 </manifest>

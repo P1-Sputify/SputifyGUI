@@ -3,14 +3,9 @@ package se.mah.patmic.sputifygui;
 import java.util.Hashtable;
 import java.util.Set;
 
-import se.mah.patmic.sputifygui.TCPService.TCPBinder;
 import server.Track;
-import android.content.ComponentName;
-import android.content.Context;
 import android.content.Intent;
-import android.content.ServiceConnection;
 import android.os.Bundle;
-import android.os.IBinder;
 import android.support.v7.app.ActionBarActivity;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -23,29 +18,14 @@ public class PlaylistActivity extends ActionBarActivity {
 	private Hashtable<Integer, Track> playListHash;
 	private ArrayAdapter<String> adapter;
 	private ListView listView;
-	TCPService tcpService;
-	boolean bound = false;
-	private Intent tcpIntent;
+	private TCPConnection tcpConnection;
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.activity_playlist);
 
-		tcpIntent = new Intent(this, TCPService.class);
-	}
-
-	@Override
-	protected void onPause() {
-		super.onPause();
-		unbindService(connection);
-	}
-
-	@Override
-	protected void onResume() {
-		super.onResume();
-		bindService(tcpIntent, connection, Context.BIND_AUTO_CREATE);
-		playListHash = tcpService.getPlaylist();
+		playListHash = tcpConnection.getPlaylist();
 		if (playListHash != null) {
 			tracklist = new Track[playListHash.size()];
 			Set<Integer> keys = playListHash.keySet();
@@ -82,19 +62,4 @@ public class PlaylistActivity extends ActionBarActivity {
 		}
 		return super.onOptionsItemSelected(item);
 	}
-
-	private ServiceConnection connection = new ServiceConnection() {
-
-		@Override
-		public void onServiceDisconnected(ComponentName arg0) {
-			bound = false;
-		}
-
-		@Override
-		public void onServiceConnected(ComponentName arg0, IBinder arg1) {
-			TCPBinder binder = (TCPBinder) arg1;
-			tcpService = binder.getService();
-			bound = true;
-		}
-	};
 }

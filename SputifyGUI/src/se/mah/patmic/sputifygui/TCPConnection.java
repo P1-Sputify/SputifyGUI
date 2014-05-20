@@ -7,21 +7,17 @@ import java.net.InetAddress;
 import java.net.Socket;
 import java.util.Hashtable;
 
-import android.app.Service;
-import android.content.Context;
-import android.content.Intent;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
-import android.os.Binder;
-import android.os.IBinder;
+
 import server.Track;
 
-public class TCPService extends Service {
-	private final IBinder binder = new TCPBinder();
+public class TCPConnection {
+	private ConnectivityManager connMgr;
 	private Socket socket = null;
 	private String ipAddress;
 	private int portNr;
-	
+
 	private ObjectOutputStream oos = null;
 	private ObjectInputStream ois = null;
 
@@ -35,29 +31,13 @@ public class TCPService extends Service {
 	public final static int LOGGING_IN = 22;
 	public final static int LOGGED_IN = 23;
 
-	private int playlistStatus = NOT_RECIEVED;
-	public final static int NOT_RECIEVED = 31;
-	public final static int DOWNLOADING = 32;
-	public final static int RECIEVED = 33;
+	public TCPConnection(ConnectivityManager connMgr, String ipAddress, int portNr) {
+		this.connMgr = connMgr;
+		this.ipAddress = ipAddress;
+		this.portNr = portNr;
 
-	public class TCPBinder extends Binder {
-		TCPService getService() {
-			return TCPService.this;
-		}
-	}
-
-	@Override
-	public IBinder onBind(Intent intent) {
-		return binder;
-	}
-
-	public void connectToServer(String ip, int port) {
-		if (connectStatus == NOT_CONNECTED) {
-			ipAddress = ip;
-			portNr = port;
-			Thread thread = new Thread(new ConnectTCPThread());
-			thread.start();
-		}
+		Thread thread = new Thread(new ConnectTCPThread());
+		thread.start();
 	}
 
 	public int login(String user, String pass) {
@@ -96,7 +76,7 @@ public class TCPService extends Service {
 			try {
 				oos.writeObject("send playlist");
 				Object obj = ois.readObject();
-				if (obj instanceof Hashtable<?, ?>) {
+				if (obj instanceof Hashtable) {
 					return (Hashtable<Integer, Track>) obj;
 				}
 			} catch (IOException | ClassNotFoundException e) {
@@ -107,22 +87,26 @@ public class TCPService extends Service {
 			return null;
 		}
 	}
-	
-	@Override
-	public void onDestroy() {
-		super.onDestroy();
-		System.out.println("Service destroyed");
+
+	public int getConnectStatus() {
+		return connectStatus;
+	}
+
+	public int getLoginStatus() {
+		return loginStatus;
 	}
 
 	private class ConnectTCPThread implements Runnable {
 		public void run() {
 			try {
-				ConnectivityManager connMgr = (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
-				NetworkInfo networkInfo = connMgr.getActiveNetworkInfo();
-				while (!(networkInfo != null && networkInfo.isConnected())) {
-					Thread.sleep(100);
-				}
 				connectStatus = ATTEMPTING_TO_CONNECT;
+
+				NetworkInfo networkInfo = connMgr.getActiveNetworkInfo();
+				while (networkInfo == null || !networkInfo.isConnected()) {
+					Thread.sleep(500);
+					networkInfo = connMgr.getActiveNetworkInfo();
+				}
+
 				socket = new Socket(InetAddress.getByName(ipAddress), portNr);
 				ois = new ObjectInputStream(socket.getInputStream());
 				oos = new ObjectOutputStream(socket.getOutputStream());
