@@ -48,8 +48,11 @@ public class SelectDeviceActivity extends Activity {
 				android.R.layout.simple_list_item_1);
 		listView = (ListView) findViewById(R.id.paired_device_list);
 		listView.setAdapter(mPairedDevicesArrayAdapter);
-		mBtAdapter = BluetoothAdapter.getDefaultAdapter();
-		setResult(RESULT_CANCELED);
+		if(!enableBt()) {
+			finish(); // Stänger ner aktiviteten kanske borde göra något annat om enheten inte supportar BT
+		} else {
+			enableBt();
+		}
 
 		Set<BluetoothDevice> pairedDevices = mBtAdapter.getBondedDevices();
 
