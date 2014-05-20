@@ -37,26 +37,39 @@ public class LoginActivity extends ActionBarActivity {
 			public void onClick(View v) {
 				String inUsername = editUser.getText().toString();
 				String inPassword = editPassword.getText().toString();
-				int res = tcpConnection.login(inUsername, inPassword);
 
-				while (res == TCPConnection.ATTEMPTING_TO_CONNECT) {
+				if (tcpConnection.getConnectStatus() == TCPConnection.ATTEMPTING_TO_CONNECT) {
 					// TODO add connecting to server message
-					try {
-						Thread.sleep(200);
-					} catch (InterruptedException e) {
-						e.printStackTrace();
+					while (tcpConnection.getConnectStatus() == TCPConnection.ATTEMPTING_TO_CONNECT) {
+						try {
+							Thread.sleep(200);
+						} catch (InterruptedException e) {
+							e.printStackTrace();
+						}
 					}
-					res = tcpConnection.login(inUsername, inPassword);
+					// TODO remove connecting to server message
 				}
-				if (res == TCPConnection.NOT_CONNECTED) {
+				if (tcpConnection.getConnectStatus() == TCPConnection.NOT_CONNECTED) {
 					// TODO add not connected error
 					return;
-				} else if (res == TCPConnection.LOGGED_IN){
-					Intent intent = new Intent(LoginActivity.this, SelectDeviceActivity.class);
-					// Intent intent = new Intent(LoginActivity.this, PlaylistActivity.class);
-					startActivity(intent);
-				} else if (res == TCPConnection.NOT_LOGGED_IN) {
-					// TODO wrong user/pass message
+				} else if (tcpConnection.getConnectStatus() == TCPConnection.CONNECTED) {
+					tcpConnection.login(inUsername, inPassword);
+					// TODO add logging in message
+					while (tcpConnection.getLoginStatus() == TCPConnection.LOGGING_IN) {
+						try {
+							Thread.sleep(100);
+						} catch (InterruptedException e) {
+							e.printStackTrace();
+						}
+					}
+
+					if (tcpConnection.getLoginStatus() == TCPConnection.LOGGED_IN) {
+						Intent intent = new Intent(LoginActivity.this, SelectDeviceActivity.class);
+						// Intent intent = new Intent(LoginActivity.this, PlaylistActivity.class);
+						startActivity(intent);
+					} else if (tcpConnection.getLoginStatus() == TCPConnection.NOT_LOGGED_IN) {
+						// TODO wrong user/pass message
+					}
 				}
 			}
 		});
