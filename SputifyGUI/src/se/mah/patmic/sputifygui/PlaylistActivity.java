@@ -4,6 +4,7 @@ import java.util.Hashtable;
 import java.util.Set;
 
 import server.Track;
+import android.app.AlertDialog;
 import android.os.Bundle;
 import android.support.v7.app.ActionBarActivity;
 import android.view.Menu;
@@ -23,7 +24,7 @@ public class PlaylistActivity extends ActionBarActivity {
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.activity_playlist);
-		
+
 		tcpConnection = TCPConnection.INSTANCE;
 		playListHash = tcpConnection.getPlayList();
 		if (playListHash != null) {
@@ -41,7 +42,8 @@ public class PlaylistActivity extends ActionBarActivity {
 			}
 			listView.setAdapter(adapter);
 		} else {
-			// TODO no playlist case
+			new AlertDialog.Builder(this).setTitle("No playlist").setMessage("Could not retrieve playlist from server")
+					.setNeutralButton(android.R.string.ok, null).setIcon(android.R.drawable.ic_dialog_alert).show();
 		}
 	}
 

@@ -2,8 +2,7 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:orientation="vertical"
-    tools:context="se.mah.ad1107.sputifygui.GuiActivity$PlaceholderFragment" >
+    android:orientation="vertical">
     
     <ListView 
         android:id="@+id/playlist"
