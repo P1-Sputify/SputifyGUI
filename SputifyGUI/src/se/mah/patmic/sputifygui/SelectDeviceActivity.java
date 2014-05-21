@@ -3,7 +3,6 @@ package se.mah.patmic.sputifygui;
 import java.util.Set;
 
 import android.app.Activity;
-import android.app.ListActivity;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.content.Intent;
