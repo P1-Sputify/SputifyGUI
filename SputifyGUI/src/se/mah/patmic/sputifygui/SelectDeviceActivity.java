@@ -3,6 +3,7 @@ package se.mah.patmic.sputifygui;
 import java.util.Set;
 
 import android.app.Activity;
+import android.app.ListActivity;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.content.Intent;
@@ -23,6 +24,8 @@ import android.widget.AdapterView.OnItemClickListener;
  * 
  */
 public class SelectDeviceActivity extends Activity {
+	private static final int REQUEST_BT_ENABLE = 4;
+
 	private static String TAG = "SelectDeviceActivity";
 
 	// För att hämta adressen till den valda enheten
@@ -42,28 +45,18 @@ public class SelectDeviceActivity extends Activity {
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.activity_select_device);
-
-		mPairedDevicesArrayAdapter = new ArrayAdapter<String>(this,
-				android.R.layout.simple_list_item_1);
-		listView = (ListView) findViewById(R.id.paired_device_list);
-		listView.setAdapter(mPairedDevicesArrayAdapter);
-		if(!enableBt()) {
-			finish(); // Stänger ner aktiviteten kanske borde göra något annat om enheten inte supportar BT
-		} else {
-			enableBt();
-		}
-
-		Set<BluetoothDevice> pairedDevices = mBtAdapter.getBondedDevices();
-
-		if (pairedDevices.size() > 0) {
-			for (BluetoothDevice device : pairedDevices) {
-				mPairedDevicesArrayAdapter.add(device.getName() + "\n"
-						+ device.getAddress());
+		mBtAdapter = BluetoothAdapter.getDefaultAdapter();
+		if (mBtAdapter != null) {
+			if (!mBtAdapter.isEnabled()) {
+				if (enableBt()) {
+					initList();
+				}
+			} else {
+				initList();
 			}
-		} else {
-			// Lägg till Meddelende ifall det inte finns några parade enheter
+		} else if (mBtAdapter == null) {
+			// TODO Something
 		}
-		listView.setOnItemClickListener(mDeviceClickListener);
 	}
 
 	/**
@@ -85,30 +78,63 @@ public class SelectDeviceActivity extends Activity {
 			Log.d(TAG, info + "\n" + address);
 
 			// Skapar en intent så att man kan skicka tillbaka data
-			Intent intent = new Intent(SelectDeviceActivity.this, PlaylistActivity.class);
-			
-			//   Starta en ny activity skicka med adressen och ett bluetooth service
+			Intent intent = new Intent(SelectDeviceActivity.this,
+					PlaylistActivity.class);
+			intent.putExtra(EXTRA_DEVICE_ADRESS, address);
+			Log.d(TAG,
+					"Data in intent"
+							+ intent.getExtras().getString(EXTRA_DEVICE_ADRESS));
+
 			mBtService = BluetoothService.getBluetoothService();
 			mBtService.connect(mBtAdapter.getRemoteDevice(address));
 			startActivity(intent);
 		}
 	};
+
 	/**
-	 * Metoden används för att kontrollera om mobilen har bluetooth och ifall den är aktivierad.
-	 * Den kan även aktivera bluetooth om inte så är fallet
-	 * @return
-	 * 		En boolean som är false om mobilen inte har bluetooth annars true
+	 * Metoden används för att kontrollera om mobilen har bluetooth och ifall
+	 * den är aktivierad. Den kan även aktivera bluetooth om inte så är fallet
+	 * 
+	 * @return En boolean som är false om mobilen inte har bluetooth annars true
 	 */
 	public boolean enableBt() {
-		if(BluetoothAdapter.getDefaultAdapter() == null) {
+		if (BluetoothAdapter.getDefaultAdapter() == null) {
 			return false; // Ifall mobilen inte har bluetooth retunras false.
 		}
 		mBtAdapter = BluetoothAdapter.getDefaultAdapter();
-		if(!BluetoothAdapter.getDefaultAdapter().isEnabled()){
-			mBtAdapter.enable();
+		if (!mBtAdapter.isEnabled()) {
+			Intent enableBtIntent = new Intent(mBtAdapter.ACTION_REQUEST_ENABLE);
+			startActivityForResult(enableBtIntent, REQUEST_BT_ENABLE);
 		}
 		return true;
+
+	}
+
+	@Override
+	protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+		if (requestCode == REQUEST_BT_ENABLE && resultCode == RESULT_OK) {
+			initList();
+		}
+		super.onActivityResult(requestCode, resultCode, data);
+	}
+
+	public void initList() {
+		mPairedDevicesArrayAdapter = new ArrayAdapter<String>(this,
+				android.R.layout.simple_list_item_1);
+		listView = (ListView) findViewById(R.id.paired_device_list);
+		listView.setAdapter(mPairedDevicesArrayAdapter);
+
+		Set<BluetoothDevice> pairedDevices = mBtAdapter.getBondedDevices();
+
+		if (pairedDevices.size() > 0) {
+			for (BluetoothDevice device : pairedDevices) {
+				mPairedDevicesArrayAdapter.add(device.getName() + "\n"
+						+ device.getAddress());
+			}
+		} else {
+			// Lägg till Meddelende ifall det inte finns några parade enheter
+		}
+		listView.setOnItemClickListener(mDeviceClickListener);
 	}
 
 }
-
