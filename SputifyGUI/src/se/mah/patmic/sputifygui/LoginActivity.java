@@ -18,7 +18,7 @@ public class LoginActivity extends ActionBarActivity {
 	private EditText editUser;
 	private EditText editPassword;
 	private Button loginButton;
-	static TCPConnection tcpConnection;
+	private TCPConnection tcpConnection;
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
@@ -26,7 +26,8 @@ public class LoginActivity extends ActionBarActivity {
 		setContentView(R.layout.activity_login);
 
 		ConnectivityManager connMgr = (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
-		tcpConnection = new TCPConnection(connMgr, ipAddress, portNr);
+		tcpConnection = TCPConnection.INSTANCE;
+		tcpConnection.connect(connMgr, ipAddress, portNr);
 
 		editUser = (EditText) findViewById(R.id.Edit_UserName);
 		editPassword = (EditText) findViewById(R.id.Edit_Password);
@@ -40,16 +41,9 @@ public class LoginActivity extends ActionBarActivity {
 
 				if (tcpConnection.getConnectStatus() == TCPConnection.ATTEMPTING_TO_CONNECT) {
 					// TODO add connecting to server message
-					while (tcpConnection.getConnectStatus() == TCPConnection.ATTEMPTING_TO_CONNECT) {
-						try {
-							Thread.sleep(200);
-						} catch (InterruptedException e) {
-							e.printStackTrace();
-						}
-					}
-					// TODO remove connecting to server message
-				}
-				if (tcpConnection.getConnectStatus() == TCPConnection.NOT_CONNECTED) {
+
+					return;
+				} else if (tcpConnection.getConnectStatus() == TCPConnection.NOT_CONNECTED) {
 					// TODO add not connected error
 					return;
 				} else if (tcpConnection.getConnectStatus() == TCPConnection.CONNECTED) {

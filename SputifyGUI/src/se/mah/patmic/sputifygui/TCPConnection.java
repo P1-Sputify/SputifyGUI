@@ -11,7 +11,9 @@ import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import server.Track;
 
-public class TCPConnection {
+public enum TCPConnection {
+	INSTANCE;
+	
 	private ConnectivityManager connMgr;
 	private Socket socket = null;
 	private String ipAddress;
@@ -38,7 +40,7 @@ public class TCPConnection {
 	public final static int DOWNLOADING = 32;
 	public final static int RECIEVED = 33;
 
-	public TCPConnection(ConnectivityManager connMgr, String ipAddress, int portNr) {
+	public void connect(ConnectivityManager connMgr, String ipAddress, int portNr) {
 		this.connMgr = connMgr;
 		this.ipAddress = ipAddress;
 		this.portNr = portNr;

@@ -17,13 +17,15 @@ public class PlaylistActivity extends ActionBarActivity {
 	private Hashtable<Integer, Track> playListHash;
 	private ArrayAdapter<String> adapter;
 	private ListView listView;
+	private TCPConnection tcpConnection;
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.activity_playlist);
-
-		playListHash = LoginActivity.tcpConnection.getPlayList();
+		
+		tcpConnection = TCPConnection.INSTANCE;
+		playListHash = tcpConnection.getPlayList();
 		if (playListHash != null) {
 			tracklist = new Track[playListHash.size()];
 			Set<Integer> keys = playListHash.keySet();
