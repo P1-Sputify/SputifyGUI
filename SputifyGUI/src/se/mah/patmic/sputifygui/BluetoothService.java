@@ -20,7 +20,20 @@ import android.util.Log;
  * 
  */
 public class BluetoothService {
-	// Debugging
+	private static BluetoothService uniqInstance;
+	
+	//TODO Se om något behövs göras
+	private BluetoothService() {
+		
+	}
+	
+	public static synchronized BluetoothService getBluetoothService() {
+		if(uniqInstance == null) {
+			uniqInstance = new BluetoothService();
+		}
+		return uniqInstance;
+	}
+	
 	private static final String TAG = "BluetoothService";
 
 	// Konstaner
@@ -52,20 +65,6 @@ public class BluetoothService {
 								// till Activityn som har gui
 	private Context mContext; // Contexten som man vill att servicen ska vara
 								// connectad till.
-
-	/**
-	 * A Constructor that prepares a new Session.
-	 * 
-	 * @param applicationContext
-	 *            The context that hosts the gui.
-	 * @param handler
-	 *            A Handler that sends messages back to the activity
-	 */
-	public BluetoothService(Context applicationContext) {
-		mState = STATE_NONE;
-//		mHandler = handler;
-		mContext = applicationContext;
-	}
 
 	/**
 	 * The method changes the bluetooth state
@@ -143,13 +142,13 @@ public class BluetoothService {
 
 	public synchronized void connected(BluetoothSocket socket,
 			BluetoothDevice device) {
-		// Avbryt tr�den som har gjort en ansluting
+		// Avbryt tråden som har gjort en ansluting
 		if (mConnectThread != null) {
 			mConnectThread.cancel();
 			mConnectThread = null;
 		}
 
-		// Avbryt tr�d som har ansluting om s�dan finns
+		// Avbryt tråd som har ansluting om sådan finns
 		if (mManagConnectionThread != null) {
 			mManagConnectionThread.cancel();
 			mManagConnectionThread = null;
@@ -158,9 +157,6 @@ public class BluetoothService {
 		// Starta en ny manageConnectThread
 		mManagConnectionThread = new manageConnectionThread(socket);
 		mManagConnectionThread.start();
-
-		// Skicka tillbaka meddlenade till UI
-
 	}
 
 	public manageConnectionThread getmManagConnectionThread() {
@@ -188,26 +184,13 @@ public class BluetoothService {
 		setState(STATE_NONE);
 	}
 
-//	public void write(byte[] out) {
-//		// Create temporary object
-//		manageConnectionThread r;
-//		// Synchronize a copy of the ConnectedThread
-//		synchronized (this) {
-//			if (mState != STATE_CONNECTED)
-//				return;
-//			r = mManagConnectionThread;
-//		}
-//		// Perform the write unsynchronized
-//		r.write(out);
-//	}
-
 	/**
 	 * Sends a message back to the ui that the connection has been lost
 	 */
 	private void connectionLost() {
 		setState(STATE_NONE);
 
-		// TODO S�nd tillbaka till ui
+		// TODO Sänd tillbaka till ui
 	}
 
 	/**
@@ -216,7 +199,7 @@ public class BluetoothService {
 	private void connectionFailed() {
 		setState(STATE_NONE);
 
-		// TODO S�nd tillbaka till UI
+		// TODO Sänd tillbaka till UI
 	}
 
 	/**
@@ -232,7 +215,7 @@ public class BluetoothService {
 
 		public ConnectThread(BluetoothDevice device) {
 			mmDevice = device;
-			BluetoothSocket tmp = null; // Anv�nder en tempor�r socket s� f�r
+			BluetoothSocket tmp = null; // Använder en temporär socket så för
 										// att inte tilldela den
 										// "riktiga variablen f�r en socket null"
 			try {
@@ -315,25 +298,22 @@ public class BluetoothService {
 		@Override
 		public void run() {
 			Log.i(TAG, "Run manageConnectionThread");
-			write("Connection Sucessfull".getBytes()); // Skriver ett meddelande till bluetooth moduen
+			setState(STATE_CONNECTED); // Nu ska man kunna skicka
 
-			byte[] buffer = new byte[1024]; // En buffert f�r att lagra den data
-											// som ska skickas. Storleken
-											// beh�ver nog �ndras.
+			byte[] buffer = new byte[1024]; // En buffert som används för att ta emot data
 
-			int bytes; // En r�knare f�r att kunna ha l�ngden av meddelandet man
-						// skickar
+			int bytes; // En räknare som innehåller längden på det som tagit emots
 
-			// S� l�nge som tr�den �r aktiv ska den lyssna efter inkommande
-			// meddelande
+			// Så länge som tråden är aktiv ska den lyssna efter inkommande
+			// meddelande. Detta kommer alltså blockera allt annat i Run metoden.
 			while (true) {
 				try {
 					bytes = mmInStream.read();
 				} catch (IOException e) {
 					Log.e(TAG, "Connection Lost", e);
 					connectionLost();
-					break; // Man kan inte l�sa fr�n instr�mmen om det inte
-							// finns n�gon ansluting.
+					break; // Man kan inte läsa från inströmmen om det inte
+							// finns någon ansluting.
 				}
 				// TODO Skicka meddelande till gui.
 			}
@@ -342,10 +322,6 @@ public class BluetoothService {
 		public void write(byte[] buffer) {
 			try {
 				mmOutStream.write(buffer);
-				// Share the sent message back to the UI Activity
-				// mHandler.obtainMessage(BluetoothChat.MESSAGE_WRITE, -1, -1,
-				// buffer)
-				// .sendToTarget();
 			} catch (IOException e) {
 				Log.e(TAG, "Exception during write", e);
 			}

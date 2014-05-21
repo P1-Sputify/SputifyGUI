@@ -87,18 +87,9 @@ public class SelectDeviceActivity extends Activity {
 
 			// Skapar en intent så att man kan skicka tillbaka data
 			Intent intent = new Intent(SelectDeviceActivity.this, PlaylistActivity.class);
-			intent.putExtra(EXTRA_DEVICE_ADRESS, address);
-			Log.d(TAG,
-					"Data in intent"
-							+ intent.getExtras().getString(EXTRA_DEVICE_ADRESS));
-			
-
-//			// Sätt resultatet till ok och skicka tillbaka datan
-//			setResult(RESULT_OK, intent);
-//			finish();
 			
 			//   Starta en ny activity skicka med adressen och ett bluetooth service
-			mBtService = new BluetoothService(SelectDeviceActivity.this);
+			mBtService = BluetoothService.getBluetoothService();
 			mBtService.connect(mBtAdapter.getRemoteDevice(address));
 			startActivity(intent);
 		}
