@@ -3,6 +3,7 @@ package se.mah.patmic.sputifygui;
 import java.util.Set;
 
 import android.app.Activity;
+import android.app.AlertDialog;
 import android.app.ListActivity;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
@@ -36,6 +37,7 @@ public class SelectDeviceActivity extends Activity {
 	private ArrayAdapter<String> mPairedDevicesArrayAdapter;
 	private ListView listView;
 	private BluetoothService mBtService;
+	
 
 	/**
 	 * Anropas när aktiviten skapas. Skapar listan och lägger till items i
@@ -87,6 +89,11 @@ public class SelectDeviceActivity extends Activity {
 
 			mBtService = BluetoothService.getBluetoothService();
 			mBtService.connect(mBtAdapter.getRemoteDevice(address));
+			AlertDialog ad = new AlertDialog.Builder(SelectDeviceActivity.this).setTitle("Connecting to bluetooth")
+			.setMessage("Attempting to connect to Bluetooth device" + info).setCancelable(false)
+			.setIcon(android.R.drawable.ic_dialog_alert).show();
+			while(mBtService.getState() == mBtService.STATE_CONNECTING);
+			ad.cancel();
 			startActivity(intent);
 		}
 	};
