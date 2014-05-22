@@ -24,7 +24,7 @@ public class LoginActivity extends ActionBarActivity {
 	private String password;
 	private TCPConnection tcpConnection;
 	private ConnectivityManager connMgr;
-	private AlertDialog currentAlertDialog;
+	private AlertDialog currentAlertDialog = null;
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
