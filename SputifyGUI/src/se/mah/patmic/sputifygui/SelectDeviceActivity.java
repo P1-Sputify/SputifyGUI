@@ -4,7 +4,6 @@ import java.util.Set;
 
 import android.app.Activity;
 import android.app.AlertDialog;
-import android.app.ListActivity;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.content.Intent;
@@ -86,14 +85,9 @@ public class SelectDeviceActivity extends Activity {
 			Log.d(TAG,
 					"Data in intent"
 							+ intent.getExtras().getString(EXTRA_DEVICE_ADRESS));
-
+			
 			mBtService = BluetoothService.getBluetoothService();
 			mBtService.connect(mBtAdapter.getRemoteDevice(address));
-			AlertDialog ad = new AlertDialog.Builder(SelectDeviceActivity.this).setTitle("Connecting to bluetooth")
-			.setMessage("Attempting to connect to Bluetooth device" + info).setCancelable(false)
-			.setIcon(android.R.drawable.ic_dialog_alert).show();
-			while(mBtService.getState() == mBtService.STATE_CONNECTING);
-			ad.cancel();
 			startActivity(intent);
 		}
 	};

@@ -26,7 +26,7 @@ public class BluetoothService {
 	// Konstaner som indikerar bluetooth State
 	public static final int STATE_NONE = 0; // Ingetting händer
 	public static final int STATE_CONNECTING = 1; // Mobilen försöker ansluta till någon bluetooth enhets
-	public static final int STATE_CONNECTED = 3; // Nu finns en Anslutning
+	public static final int STATE_CONNECTED = 2; // Nu finns en Anslutning
 	private ConnectThread mConnectThread;
 	private manageConnectionThread mManageConnectionThread;
 	private int mState;
@@ -105,7 +105,6 @@ public class BluetoothService {
 	 */
 	public synchronized void connect(BluetoothDevice device) {
 		Log.d(TAG, "Trying to initiate connection to: " + device);
-
 		if (mState == STATE_CONNECTING) {
 			if (mConnectThread != null) {
 				mConnectThread.cancel();
@@ -207,6 +206,7 @@ public class BluetoothService {
 			try {
 				tmp = device.createRfcommSocketToServiceRecord(MY_UUID);
 				Log.i(TAG, "Socket Creation Sucessfull");
+				
 			} catch (IOException e) {
 				Log.e(TAG, "Socket Creation Failed");
 			}
@@ -217,9 +217,9 @@ public class BluetoothService {
 		public void run() {
 			Log.i(TAG, "mConnectThread started");
 			setName("ConnectThread");
-
 			try {
 				mmSocket.connect(); // Detta anropen blockerar tråden. Den kommer bara att ge en timeout eller en lyckad anslutning
+				setState(STATE_CONNECTING);
 			} catch (IOException e) {
 				connectionFailed();
 				try {
@@ -290,7 +290,7 @@ public class BluetoothService {
 		public void run() {
 			Log.i(TAG, "Run manageConnectionThread");
 			setState(STATE_CONNECTED); // Nu ska man kunna skicka
-
+			write("Bajs på dig".getBytes());
 			byte[] buffer = new byte[1024]; // En buffert som används för att ta emot data
 
 			int bytes; // En räknare som innehåller längden på det som tagit emots
