@@ -74,7 +74,7 @@ public enum TCPConnection {
 	public void login(String user, String pass) {
 		this.user = user;
 		this.pass = pass;
-		loginStatus = NOT_LOGGED_IN;
+		loginStatus = LOGGING_IN;
 	}
 
 	public Hashtable<Integer, Track> getPlayList() {
