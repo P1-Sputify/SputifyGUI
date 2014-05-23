@@ -19,6 +19,7 @@ public class PlaylistActivity extends ActionBarActivity {
 	private ArrayAdapter<String> adapter;
 	private ListView listView;
 	private TCPConnection tcpConnection;
+	private AlertDialog currentAlertDialog = null;
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
@@ -26,12 +27,15 @@ public class PlaylistActivity extends ActionBarActivity {
 		setContentView(R.layout.activity_playlist);
 
 		tcpConnection = TCPConnection.INSTANCE;
-		playListHash = tcpConnection.getPlayList();
+		showPlayList(tcpConnection.getPlayList());
+	}
+
+	private void showPlayList(Hashtable<Integer, Track> playListHash) {
 		if (playListHash != null) {
 			tracklist = new Track[playListHash.size()];
 			Set<Integer> keys = playListHash.keySet();
 			listView = (ListView) findViewById(R.id.playlist);
-			adapter = new ArrayAdapter<>(this, android.R.layout.simple_list_item_1);
+			adapter = new ArrayAdapter<>(PlaylistActivity.this, android.R.layout.simple_list_item_1);
 			int counter = 0;
 			for (Integer key : keys) {
 				tracklist[counter++] = playListHash.get(key);
@@ -40,10 +44,12 @@ public class PlaylistActivity extends ActionBarActivity {
 			for (int i = 0; i < tracklist.length; i++) {
 				adapter.add(tracklist[i].getName());
 			}
+			
+			// TODO Add listener
+			
 			listView.setAdapter(adapter);
 		} else {
-			new AlertDialog.Builder(this).setTitle("No playlist").setMessage("Could not retrieve playlist from server")
-					.setNeutralButton(android.R.string.ok, null).setIcon(android.R.drawable.ic_dialog_alert).show();
+			new Thread(new waitingForDownloadThread()).start();
 		}
 	}
 
@@ -100,6 +106,63 @@ public class PlaylistActivity extends ActionBarActivity {
 		public void run() {
 		// TODO Auto-generated method stub
 		
+		}
+	}
+
+	private class waitingForDownloadThread implements Runnable {
+		public void run() {
+			if (tcpConnection.getPlayListStatus() == TCPConnection.LIST_NOT_RECIEVED) {
+				runOnUiThread(new Runnable() {
+					@Override
+					public void run() {
+						if (currentAlertDialog != null && currentAlertDialog.isShowing()) {
+							currentAlertDialog.cancel();
+						}
+						currentAlertDialog = new AlertDialog.Builder(PlaylistActivity.this).setTitle("No playlist")
+								.setMessage("Playlist not recieved from server")
+								.setNeutralButton(android.R.string.ok, null)
+								.setIcon(android.R.drawable.ic_dialog_alert).show();
+					}
+				});
+				while (tcpConnection.getPlayListStatus() == TCPConnection.LIST_NOT_RECIEVED) {
+					try {
+						Thread.sleep(200);
+					} catch (InterruptedException e) {
+						e.printStackTrace();
+					}
+				}
+			}
+
+			if (tcpConnection.getPlayListStatus() == TCPConnection.LIST_DOWNLOADING) {
+				runOnUiThread(new Runnable() {
+					@Override
+					public void run() {
+						if (currentAlertDialog != null && currentAlertDialog.isShowing()) {
+							currentAlertDialog.cancel();
+						}
+						currentAlertDialog = new AlertDialog.Builder(PlaylistActivity.this).setTitle("Downloading")
+								.setMessage("Downloading playlist from server").setCancelable(false)
+								.setIcon(android.R.drawable.ic_dialog_alert).show();
+					}
+				});
+				while (tcpConnection.getPlayListStatus() == TCPConnection.LIST_DOWNLOADING) {
+					try {
+						Thread.sleep(100);
+					} catch (InterruptedException e) {
+						e.printStackTrace();
+					}
+				}
+			}
+
+			runOnUiThread(new Runnable() {
+				@Override
+				public void run() {
+					if (currentAlertDialog != null && currentAlertDialog.isShowing()) {
+						currentAlertDialog.cancel();
+					}
+					showPlayList(tcpConnection.getPlayList());
+				}
+			});
 		}
 	}
 }
