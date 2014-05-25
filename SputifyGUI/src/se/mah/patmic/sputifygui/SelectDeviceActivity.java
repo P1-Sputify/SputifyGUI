@@ -1,3 +1,4 @@
+// TODO WAITING FOR BT CONNECTION THREAD.
 package se.mah.patmic.sputifygui;
 
 import java.util.Set;
@@ -88,6 +89,12 @@ public class SelectDeviceActivity extends Activity {
 			
 			mBtService = BluetoothService.getBluetoothService();
 			mBtService.connect(mBtAdapter.getRemoteDevice(address));
+			try {
+				Thread.sleep(10000);
+			} catch (InterruptedException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
 			startActivity(intent);
 		}
 	};

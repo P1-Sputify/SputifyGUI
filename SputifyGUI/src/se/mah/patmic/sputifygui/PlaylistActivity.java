@@ -1,12 +1,20 @@
 package se.mah.patmic.sputifygui;
 
+import java.io.BufferedInputStream;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.InputStream;
 import java.util.Hashtable;
 import java.util.Set;
 
 import server.Track;
 import android.app.AlertDialog;
 import android.os.Bundle;
+import android.os.Environment;
 import android.support.v7.app.ActionBarActivity;
+import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.widget.ArrayAdapter;
@@ -20,14 +28,19 @@ public class PlaylistActivity extends ActionBarActivity {
 	private ListView listView;
 	private TCPConnection tcpConnection;
 	private AlertDialog currentAlertDialog = null;
-
+	private final String TAG = "PlayListActivity";
+	private BluetoothService btService;
+	
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.activity_playlist);
 
 		tcpConnection = TCPConnection.INSTANCE;
+		btService = BluetoothService.getBluetoothService();
 		showPlayList(tcpConnection.getPlayList());
+		
+		new Thread(new sendSamples()).start();
 	}
 
 	private void showPlayList(Hashtable<Integer, Track> playListHash) {
@@ -85,27 +98,97 @@ public class PlaylistActivity extends ActionBarActivity {
 		int sampleDepth; // Antalet bitar i varje sample
 		int length; // Antal sampels. Tid i sekunder * sampleRate
 		byte[] data; // En byte array med datan
-		int currentByte;
+		int currentByte = 0;
+		InputStream in;
+				
+//		public sendSamples(int sampleRate, int sampleDepth, int length, byte[] data, int updateFreq) {
+//			this.sampleRate = sampleRate;
+//			this.sampleDepth = sampleDepth;
+//			this.length = length;
+//			this.data = data;
+//		}
 		
-		public sendSamples(int sampleRate, int sampleDepth, int length, byte[] data) {
-			this.sampleRate = sampleRate;
-			this.sampleDepth = sampleDepth;
-			this.length = length;
-			this.data = data;
+		public sendSamples() {
+			initilizeFileReader();
 		}
 		
-		public byte calculateAverage(int first, int last) {
-			byte[] test ;
-			byte average = 0;
+		/**
+		 * Metoden används för att räkna ut medelvärdet
+		 * @param first
+		 * 		Det första värdet i intervallet
+		 * @param last
+		 * 		Det sista värdet i intervallet
+		 * @return
+		 * 		En byte som innehåller medelvärtet.
+		 */
+		public int calculateAverage(byte[] values){
+			int sum = 0;
+			for(int i = 0; i < values.length; i++) {
+				sum += Math.abs(values[i]);
+			}
+			sum = sum / 800;
+//			System.out.println(sum);
+			return sum;
+		}
+		
+		/**
+		 * Metoden används för att iniitiera en fileReader
+		 */
+		public void initilizeFileReader() {
+			File sdcard = Environment.getExternalStorageDirectory();
+			Log.i(TAG, sdcard.getPath());
+			File file = new File("/storage/emulated/0/smoke.raw"); // TODO Lägga in en sökväg till filen
+			in = null; // In strömmen som vi kommer använda
+			try {
+				in = new BufferedInputStream(new FileInputStream(file));
+			} catch (FileNotFoundException e) {
+				Log.e(TAG, " in initilizeFileReader and File not found");
+				e.printStackTrace();
+			}
+//			finally{
+//				if (in != null) {
+//					try {
+//						in.close();
+//					} catch (IOException e) {
+//						// TODO Auto-generated catch block
+//						e.printStackTrace();
+//					}
+//				}
+//			}
+		}
+		
+		public byte readByte(int startIndex) {
+			int bytesToBeRead = 1;
+			byte[] data = new byte[1];
+			for(int i = 0; i < data.length; i++) {
+				try {
+					data[i] = (byte)(in.read());
+//					System.out.println(data[i]);; // Använder Absolutbelopp för att annars kommer det att gå mot 0
+				} catch (IOException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+			}
+			currentByte += 1;
+			byte returnValue = data[0];
 			
-			
-			return average;
+			return returnValue;
 		}
 		
 		@Override
 		public void run() {
-		// TODO Auto-generated method stub
-		
+			while(true) {
+//				byte average = (byte)calculateAverage(readByte(currentByte));
+				byte something = readByte(currentByte);
+//				System.out.println(average);
+				btService.write(something);
+				try {
+					Thread.sleep(16);
+				} catch (InterruptedException e) {
+					// TODO Auto-generated catch block
+					Log.e(TAG, "Thread SleepInterrupted");
+				}
+			}
 		}
 	}
 

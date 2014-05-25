@@ -185,6 +185,12 @@ public class BluetoothService {
 		setState(STATE_NONE);
 		Log.d(TAG, "The Bluetooth connection failed");
 	}
+	
+	public void write( byte message) {
+		byte[] send = new byte[1];
+		send[0] = message;
+		mManageConnectionThread.write(send);
+	}
 
 	/**
 	 * Denna tråd används för att skapa en anslutnign mellan mobilen och en Bluetooth enhet
@@ -290,7 +296,6 @@ public class BluetoothService {
 		public void run() {
 			Log.i(TAG, "Run manageConnectionThread");
 			setState(STATE_CONNECTED); // Nu ska man kunna skicka
-			write("Bajs på dig".getBytes());
 			byte[] buffer = new byte[1024]; // En buffert som används för att ta emot data
 
 			int bytes; // En räknare som innehåller längden på det som tagit emots
