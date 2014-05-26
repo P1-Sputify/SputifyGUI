@@ -185,6 +185,15 @@ public class BluetoothService {
 		setState(STATE_NONE);
 		Log.d(TAG, "The Bluetooth connection failed");
 	}
+	
+	public void write(int message) {
+		try {
+			mManageConnectionThread.mmOutStream.write(message);
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		};
+	}
 
 	/**
 	 * Denna tråd används för att skapa en anslutnign mellan mobilen och en Bluetooth enhet

@@ -20,7 +20,8 @@
         android:theme="@style/AppTheme" >
         <activity
             android:name="se.mah.patmic.sputifygui.LoginActivity"
-            android:label="@string/title_activity_login" >
+            android:label="@string/title_activity_login" 
+            android:screenOrientation="portrait">
             <intent-filter android:label="@string/app_name" >
                 <action android:name="android.intent.action.MAIN" />
 
@@ -30,6 +31,7 @@
         <activity
             android:name="se.mah.patmic.sputifygui.SelectDeviceActivity"
             android:label="@string/title_activity_select_device"
+            android:screenOrientation="portrait"
             android:parentActivityName="se.mah.patmic.sputifygui.LoginActivity" >
             <meta-data
                 android:name="android.support.PARENT_ACTIVITY"
@@ -38,6 +40,7 @@
         <activity
             android:name="se.mah.patmic.sputifygui.PlaylistActivity"
             android:label="@string/title_activity_playlist"
+            android:screenOrientation="portrait"
             android:parentActivityName="se.mah.patmic.sputifygui.SelectDeviceActivity" >
             <meta-data
                 android:name="android.support.PARENT_ACTIVITY"
@@ -46,11 +49,11 @@
         <activity
             android:name="se.mah.patmic.sputifygui.PlayActivity"
             android:label="@string/title_activity_play"
+            android:screenOrientation="portrait"
             android:parentActivityName="se.mah.patmic.sputifygui.PlaylistActivity" >
             <meta-data
                 android:name="android.support.PARENT_ACTIVITY"
                 android:value="se.mah.patmic.sputifygui.PlaylistActivity" />
         </activity>
     </application>
-
 </manifest>

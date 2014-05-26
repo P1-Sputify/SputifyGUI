@@ -96,41 +96,6 @@ public class PlaylistActivity extends ActionBarActivity {
 		return super.onOptionsItemSelected(item);
 	}
 
-	/**
-	 * Denna tråd kommer att används för att räkna ut medelvärted av amplituder under ett viss intervall och sedan
-	 * anropa Bluetoothservice för att skicka detta värde till arduino.
-	 * 
-	 * @author Patrik
-	 * 
-	 */
-	private class sendSamples implements Runnable {
-		int sampleRate; // Antalet samples per sekunder
-		int sampleDepth; // Antalet bitar i varje sample
-		int length; // Antal sampels. Tid i sekunder * sampleRate
-		byte[] data; // En byte array med datan
-		int currentByte;
-
-		public sendSamples(int sampleRate, int sampleDepth, int length, byte[] data) {
-			this.sampleRate = sampleRate;
-			this.sampleDepth = sampleDepth;
-			this.length = length;
-			this.data = data;
-		}
-
-		public byte calculateAverage(int first, int last) {
-			byte[] test;
-			byte average = 0;
-
-			return average;
-		}
-
-		@Override
-		public void run() {
-			// TODO Auto-generated method stub
-
-		}
-	}
-
 	private class waitingForDownloadThread implements Runnable {
 		public void run() {
 			if (tcpConnection.getPlayListStatus() == TCPConnection.LIST_NOT_RECIEVED) {
