@@ -27,6 +27,7 @@ public enum TCPConnection {
 	private int trackRequest;
 	private int currentTrack;
 	private int downloadingTrackNr;
+	private boolean incomingTrackRequest = false;
 	private byte[] track = null;
 
 	private ObjectOutputStream oos = null;
@@ -83,6 +84,7 @@ public enum TCPConnection {
 
 	public void requestTrack(int trackNr) {
 		trackRequest = trackNr;
+		incomingTrackRequest = true;
 		requestedTrackStatus = TRACK_DOWNLOADING;
 	}
 
@@ -157,28 +159,37 @@ public enum TCPConnection {
 								playListStatus = LIST_NOT_RECIEVED;
 							}
 						} else if (requestedTrackStatus != TRACK_RECIEVED) {
-							if (track != null && currentTrack == trackRequest) {
-								requestedTrackStatus = TRACK_RECIEVED;
-							} else {
-								downloadingTrackNr = trackRequest;
-								requestedTrackStatus = TRACK_DOWNLOADING;
-								try {
-									oos.writeObject(Integer.valueOf(downloadingTrackNr));
-									Object obj = ois.readObject();
-									if (obj instanceof byte[]) {
-										track = (byte[]) obj;
-										currentTrack = downloadingTrackNr;
-										if (currentTrack == trackRequest) {
-											requestedTrackStatus = TRACK_RECIEVED;
+							if (incomingTrackRequest) {
+								if (track != null && currentTrack == trackRequest) {
+									requestedTrackStatus = TRACK_RECIEVED;
+								} else {
+									downloadingTrackNr = trackRequest;
+									requestedTrackStatus = TRACK_DOWNLOADING;
+									try {
+										oos.writeObject(Integer.valueOf(downloadingTrackNr));
+										Object obj = ois.readObject();
+										if (obj instanceof byte[]) {
+											track = (byte[]) obj;
+											currentTrack = downloadingTrackNr;
+											if (currentTrack == trackRequest) {
+												requestedTrackStatus = TRACK_RECIEVED;
+												incomingTrackRequest = false;
+											} else {
+												requestedTrackStatus = TRACK_NOT_RECIEVED;
+											}
 										} else {
 											requestedTrackStatus = TRACK_NOT_RECIEVED;
 										}
-									} else {
+									} catch (IOException | ClassNotFoundException e) {
+										e.printStackTrace();
 										requestedTrackStatus = TRACK_NOT_RECIEVED;
 									}
-								} catch (IOException | ClassNotFoundException e) {
+								}
+							} else { // !incomingTrackRequest
+								try {
+									Thread.sleep(50);
+								} catch (InterruptedException e) {
 									e.printStackTrace();
-									requestedTrackStatus = TRACK_NOT_RECIEVED;
 								}
 							}
 						}
