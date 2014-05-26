@@ -202,7 +202,7 @@ public class PlayActivity extends ActionBarActivity {
 					if (new String(audioArray, 0, 4).equals("RIFF") && new String(audioArray, 8, 4).equals("WAVE")) {
 
 						// Kontrollerar att filen innehåller format beskrivning
-						if (new String(audioArray, 12, 4).equals("fmt")) {
+						if (new String(audioArray, 12, 4).equals("fmt ")) {
 
 							// kontrollerar att audio är kodad som PCM
 							if (audioArray[20] == 1 && audioArray[21] == 0) {
@@ -234,14 +234,28 @@ public class PlayActivity extends ActionBarActivity {
 								return;
 							}
 
+							int temp;
+							
 							// Räknar ut samplerate
-							samplerate = audioArray[24] + (audioArray[25] * 0x100) + (audioArray[26] * 0x10000)
-									+ (audioArray[27] * 0x1000000);
-
+							temp = audioArray[24] & 0xFF;
+							samplerate = temp;
+							temp = audioArray[25] & 0xFF;
+							samplerate += temp * 0x100;
+							temp = audioArray[26] & 0xFF;
+							samplerate += temp * 0x10000;
+							temp = audioArray[27] & 0xFF;
+							samplerate += temp * 0x1000000;
+							
 							// Räknar ut hur stor bufferten ska vara
-							buffersize = samplerate = audioArray[40] + (audioArray[41] * 0x100)
-									+ (audioArray[42] * 0x10000) + (audioArray[43] * 0x1000000);
-
+							temp = audioArray[40] & 0xFF;
+							buffersize = temp;
+							temp = audioArray[41] & 0xFF;
+							buffersize += temp * 0x100;
+							temp = audioArray[42] & 0xFF;
+							buffersize += temp * 0x10000;
+							temp = audioArray[43] & 0xFF;
+							buffersize += temp * 0x1000000;
+							
 							// Initierar audioTrack
 							audioTrack = new AudioTrack(AudioManager.STREAM_MUSIC, samplerate, channels, encoding,
 									buffersize, AudioTrack.MODE_STATIC);
