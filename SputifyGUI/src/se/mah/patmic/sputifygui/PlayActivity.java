@@ -108,7 +108,11 @@ public class PlayActivity extends ActionBarActivity {
 	}
 	
 	private void pauseAudio() {
-		audioTrack.pause();
+		if(audioTrackInitiated){
+			audioTrack.pause();
+		} else {
+			// TODO Track not loaded
+		}
 	}
 
 	@Override
