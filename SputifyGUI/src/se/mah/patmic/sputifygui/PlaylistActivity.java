@@ -56,7 +56,7 @@ public class PlaylistActivity extends ActionBarActivity {
 					String title = (String) parent.getItemAtPosition(position);
 					if (tracklist[position].getName().equalsIgnoreCase(title)) {
 						tcpConnection.requestTrack(tracklist[position].getId());
-						// TODO Skapa intent för att starta Andreas intent
+						// TODO Skapa intent för att starta Andreas activty
 					} else {
 						new AlertDialog.Builder(PlaylistActivity.this).setTitle("Track ID Error")
 								.setMessage("Track ID Error").setNeutralButton(android.R.string.ok, null)
