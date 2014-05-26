@@ -126,7 +126,6 @@ public class PlayActivity extends ActionBarActivity {
 		} else {
 			// TODO Track not loaded
 		}
-
 	}
 
 	@Override
