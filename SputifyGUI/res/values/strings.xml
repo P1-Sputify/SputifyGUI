@@ -10,5 +10,7 @@
     <string name="title_activity_select_device">Spütify select BT device</string>
     <string name="title_activity_login">Spütify login</string>
     <string name="reconnect_button">Reconnect</string>
+    <string name="title_activity_play">Spütify play track</string>
+    <string name="song_title"></string>
 
 </resources>

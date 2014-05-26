@@ -5,6 +5,7 @@ import java.util.Set;
 
 import server.Track;
 import android.app.AlertDialog;
+import android.content.Intent;
 import android.os.Bundle;
 import android.support.v7.app.ActionBarActivity;
 import android.view.Menu;
@@ -15,6 +16,8 @@ import android.widget.ArrayAdapter;
 import android.widget.ListView;
 
 public class PlaylistActivity extends ActionBarActivity {
+
+	public final static String EXTRA_TRACK_NAME = "se.mah.patmic.sputifygui.TRACK_NAME";
 
 	private Track[] tracklist;
 	private Hashtable<Integer, Track> playListHash;
@@ -56,9 +59,11 @@ public class PlaylistActivity extends ActionBarActivity {
 					String title = (String) parent.getItemAtPosition(position);
 					if (tracklist[position].getName().equalsIgnoreCase(title)) {
 						tcpConnection.requestTrack(tracklist[position].getId());
-						
-						// TODO Skapa intent för att starta Andreas activity
-						
+
+						Intent intent = new Intent(PlaylistActivity.this, PlayActivity.class);
+						intent.putExtra(tracklist[position].getName(), EXTRA_TRACK_NAME);
+						startActivity(intent);
+
 					} else {
 						new AlertDialog.Builder(PlaylistActivity.this).setTitle("Track ID Error")
 								.setMessage("Track ID Error").setNeutralButton(android.R.string.ok, null)
