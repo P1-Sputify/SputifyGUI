@@ -9,6 +9,8 @@ import android.os.Bundle;
 import android.support.v7.app.ActionBarActivity;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.View;
+import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.ListView;
 
@@ -44,10 +46,24 @@ public class PlaylistActivity extends ActionBarActivity {
 			for (int i = 0; i < tracklist.length; i++) {
 				adapter.add(tracklist[i].getName());
 			}
-			
-			// TODO Add listener
-			
+
 			listView.setAdapter(adapter);
+
+			listView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+
+				@Override
+				public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+					String title = (String) parent.getItemAtPosition(position);
+					if (tracklist[position].getName().equalsIgnoreCase(title)) {
+						tcpConnection.requestTrack(tracklist[position].getId());
+						// TODO Skapa intent för att starta Andreas intent
+					} else {
+						new AlertDialog.Builder(PlaylistActivity.this).setTitle("Track ID Error")
+								.setMessage("Track ID Error").setNeutralButton(android.R.string.ok, null)
+								.setIcon(android.R.drawable.ic_dialog_alert).show();
+					}
+				}
+			});
 		} else {
 			new Thread(new waitingForDownloadThread()).start();
 		}
@@ -72,13 +88,13 @@ public class PlaylistActivity extends ActionBarActivity {
 		}
 		return super.onOptionsItemSelected(item);
 	}
-	
+
 	/**
-	 * Denna tråd kommer att används för att räkna ut medelvärted av amplituder 
-	 * under ett viss intervall och sedan anropa Bluetoothservice för att skicka 
-	 * detta värde till arduino.
+	 * Denna tråd kommer att används för att räkna ut medelvärted av amplituder under ett viss intervall och sedan
+	 * anropa Bluetoothservice för att skicka detta värde till arduino.
+	 * 
 	 * @author Patrik
-	 *
+	 * 
 	 */
 	private class sendSamples implements Runnable {
 		int sampleRate; // Antalet samples per sekunder
@@ -86,26 +102,25 @@ public class PlaylistActivity extends ActionBarActivity {
 		int length; // Antal sampels. Tid i sekunder * sampleRate
 		byte[] data; // En byte array med datan
 		int currentByte;
-		
+
 		public sendSamples(int sampleRate, int sampleDepth, int length, byte[] data) {
 			this.sampleRate = sampleRate;
 			this.sampleDepth = sampleDepth;
 			this.length = length;
 			this.data = data;
 		}
-		
+
 		public byte calculateAverage(int first, int last) {
-			byte[] test ;
+			byte[] test;
 			byte average = 0;
-			
-			
+
 			return average;
 		}
-		
+
 		@Override
 		public void run() {
-		// TODO Auto-generated method stub
-		
+			// TODO Auto-generated method stub
+
 		}
 	}
 
