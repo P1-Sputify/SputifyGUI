@@ -9,8 +9,9 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="@string/song_title"
-        android:textColor="#C0C0C0"
-        android:textStyle="bold" />
+        android:textSize="14pt"
+        android:textStyle="bold"
+        android:layout_gravity="center_horizontal"/>
 
     <Button
         android:id="@+id/ButtonPlayStop"
@@ -18,11 +19,13 @@
         android:layout_height="168dp"
         android:padding="15dp"
         android:textSize="15pt"
-        android:textStyle="bold" />
+        android:textStyle="bold" 
+        android:layout_gravity="center_horizontal"/>
 
     <SeekBar
-        android:id="@+id/SeekBar01"
-        android:layout_width="108dp"
-        android:layout_height="wrap_content" />
+        android:id="@+id/audio_seek_bar"
+        android:layout_width="256dp"
+        android:layout_height="wrap_content" 
+        android:layout_gravity="center_horizontal"/>
 
 </LinearLayout>

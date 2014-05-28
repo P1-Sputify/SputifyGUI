@@ -35,6 +35,7 @@ public class PlayActivity extends ActionBarActivity {
 	private BluetoothService btService;
 	private Thread sendSamplesThread;
 
+	
 	public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.activity_play);
@@ -54,6 +55,13 @@ public class PlayActivity extends ActionBarActivity {
 			Toast.makeText(getApplicationContext(), e.getClass().getName() + " " + e.getMessage(), Toast.LENGTH_LONG)
 					.show();
 		}
+	}
+	
+	@Override
+	public void onBackPressed() {
+		super.onBackPressed();
+		pauseAudio();
+		audioTrack.flush();
 	}
 
 	/**
