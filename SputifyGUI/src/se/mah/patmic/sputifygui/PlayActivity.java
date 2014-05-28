@@ -301,7 +301,7 @@ public class PlayActivity extends ActionBarActivity {
 							temp = audioArray[43] & 0xFF;
 							buffersize += temp * 0x1000000;
 
-							nrOfAudioFramesInTrack = (temp * 8) / tempSampleSize / tempChannels;
+							nrOfAudioFramesInTrack = (buffersize * 8) / tempSampleSize / tempChannels;
 
 							// Initierar audioTrack
 							audioTrack = new AudioTrack(AudioManager.STREAM_MUSIC, samplerate, channels, encoding,
