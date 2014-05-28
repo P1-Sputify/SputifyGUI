@@ -61,7 +61,7 @@ public class PlaylistActivity extends ActionBarActivity {
 						tcpConnection.requestTrack(tracklist[position].getId());
 
 						Intent intent = new Intent(PlaylistActivity.this, PlayActivity.class);
-						intent.putExtra(tracklist[position].getName(), EXTRA_TRACK_NAME);
+						intent.putExtra(EXTRA_TRACK_NAME, tracklist[position].getName());
 						startActivity(intent);
 
 					} else {

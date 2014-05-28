@@ -19,7 +19,8 @@ import android.view.View.OnClickListener;
  * 
  * @author Andreas
  * 
- *         This class plays songs by pressing a play button and pausing the song by pressing the pause button
+ *         This class plays songs by pressing a play button and pausing the song
+ *         by pressing the pause button
  */
 public class PlayActivity extends ActionBarActivity {
 
@@ -45,15 +46,17 @@ public class PlayActivity extends ActionBarActivity {
 		new Thread(new InitAudioTrackThread()).start();
 
 		Intent startIntent = getIntent();
-		trackName = startIntent.getStringExtra(PlaylistActivity.EXTRA_TRACK_NAME);
+		trackName = startIntent
+				.getStringExtra(PlaylistActivity.EXTRA_TRACK_NAME);
 
 		try {
 			initViews();
 			setListeners();
 		} catch (Exception e) {
 			e.printStackTrace();
-			Toast.makeText(getApplicationContext(), e.getClass().getName() + " " + e.getMessage(), Toast.LENGTH_LONG)
-					.show();
+			Toast.makeText(getApplicationContext(),
+					e.getClass().getName() + " " + e.getMessage(),
+					Toast.LENGTH_LONG).show();
 		}
 	}
 	
@@ -132,11 +135,14 @@ public class PlayActivity extends ActionBarActivity {
 		runOnUiThread(new Runnable() {
 			@Override
 			public void run() {
-				if (currentAlertDialog != null && currentAlertDialog.isShowing()) {
+				if (currentAlertDialog != null
+						&& currentAlertDialog.isShowing()) {
 					currentAlertDialog.cancel();
 				}
-				currentAlertDialog = new AlertDialog.Builder(PlayActivity.this).setTitle(title).setMessage(message)
-						.setNeutralButton(android.R.string.ok, null).setIcon(android.R.drawable.ic_dialog_alert).show();
+				currentAlertDialog = new AlertDialog.Builder(PlayActivity.this)
+						.setTitle(title).setMessage(message)
+						.setNeutralButton(android.R.string.ok, null)
+						.setIcon(android.R.drawable.ic_dialog_alert).show();
 			}
 		});
 
@@ -168,13 +174,16 @@ public class PlayActivity extends ActionBarActivity {
 				runOnUiThread(new Runnable() {
 					@Override
 					public void run() {
-						if (currentAlertDialog != null && currentAlertDialog.isShowing()) {
+						if (currentAlertDialog != null
+								&& currentAlertDialog.isShowing()) {
 							currentAlertDialog.cancel();
 						}
-						currentAlertDialog = new AlertDialog.Builder(PlayActivity.this).setTitle("No track")
+						currentAlertDialog = new AlertDialog.Builder(
+								PlayActivity.this).setTitle("No track")
 								.setMessage("Track not recieved from server")
 								.setNeutralButton(android.R.string.ok, null)
-								.setIcon(android.R.drawable.ic_dialog_alert).show();
+								.setIcon(android.R.drawable.ic_dialog_alert)
+								.show();
 					}
 				});
 				while (tcpConnection.getRequestedTrackStatus() == TCPConnection.TRACK_NOT_RECIEVED) {
@@ -190,12 +199,16 @@ public class PlayActivity extends ActionBarActivity {
 				runOnUiThread(new Runnable() {
 					@Override
 					public void run() {
-						if (currentAlertDialog != null && currentAlertDialog.isShowing()) {
+						if (currentAlertDialog != null
+								&& currentAlertDialog.isShowing()) {
 							currentAlertDialog.cancel();
 						}
-						currentAlertDialog = new AlertDialog.Builder(PlayActivity.this).setTitle("Downloading")
-								.setMessage("Downloading track from server").setCancelable(false)
-								.setIcon(android.R.drawable.ic_dialog_alert).show();
+						currentAlertDialog = new AlertDialog.Builder(
+								PlayActivity.this).setTitle("Downloading")
+								.setMessage("Downloading track from server")
+								.setCancelable(false)
+								.setIcon(android.R.drawable.ic_dialog_alert)
+								.show();
 					}
 				});
 				while (tcpConnection.getRequestedTrackStatus() == TCPConnection.TRACK_DOWNLOADING) {
@@ -210,7 +223,8 @@ public class PlayActivity extends ActionBarActivity {
 			runOnUiThread(new Runnable() {
 				@Override
 				public void run() {
-					if (currentAlertDialog != null && currentAlertDialog.isShowing()) {
+					if (currentAlertDialog != null
+							&& currentAlertDialog.isShowing()) {
 						currentAlertDialog.cancel();
 					}
 				}
@@ -229,7 +243,8 @@ public class PlayActivity extends ActionBarActivity {
 					int channels, encoding, samplerate, buffersize;
 
 					// Kollar att filen är i WAV format
-					if (new String(audioArray, 0, 4).equals("RIFF") && new String(audioArray, 8, 4).equals("WAVE")) {
+					if (new String(audioArray, 0, 4).equals("RIFF")
+							&& new String(audioArray, 8, 4).equals("WAVE")) {
 
 						// Kontrollerar att filen innehåller format beskrivning
 						if (new String(audioArray, 12, 4).equals("fmt ")) {
@@ -240,27 +255,32 @@ public class PlayActivity extends ActionBarActivity {
 								// kontrollerar bits/sample
 								if (audioArray[34] == 16 && audioArray[35] == 0) {
 									encoding = AudioFormat.ENCODING_PCM_16BIT;
-								} else if (audioArray[34] == 8 && audioArray[35] == 0) {
+								} else if (audioArray[34] == 8
+										&& audioArray[35] == 0) {
 									encoding = AudioFormat.ENCODING_PCM_8BIT;
 								} else {
 									encoding = AudioFormat.ENCODING_INVALID;
-									showErrorMessage("Unsuported format", "The bits-per-sample rate on this file is not supported");
+									showErrorMessage("Unsuported format",
+											"The bits-per-sample rate on this file is not supported");
 									return;
 								}
 							} else {
 								encoding = AudioFormat.ENCODING_INVALID;
-								showErrorMessage("Unsuported format", "The encoding on this file is not supported");
+								showErrorMessage("Unsuported format",
+										"The encoding on this file is not supported");
 								return;
 							}
 
 							// kontrollerar att audio är mono eller stereo
 							if (audioArray[22] == 2 && audioArray[23] == 0) {
 								channels = AudioFormat.CHANNEL_OUT_STEREO;
-							} else if (audioArray[22] == 1 && audioArray[23] == 0) {
+							} else if (audioArray[22] == 1
+									&& audioArray[23] == 0) {
 								channels = AudioFormat.CHANNEL_OUT_MONO;
 							} else {
 								channels = AudioFormat.CHANNEL_INVALID;
-								showErrorMessage("Unsuported format", "The number of channels on this file is not supported");
+								showErrorMessage("Unsuported format",
+										"The number of channels on this file is not supported");
 								return;
 							}
 
@@ -287,16 +307,20 @@ public class PlayActivity extends ActionBarActivity {
 							buffersize += temp * 0x1000000;
 
 							// Initierar audioTrack
-							audioTrack = new AudioTrack(AudioManager.STREAM_MUSIC, samplerate, channels, encoding,
-									buffersize, AudioTrack.MODE_STATIC);
+							audioTrack = new AudioTrack(
+									AudioManager.STREAM_MUSIC, samplerate,
+									channels, encoding, buffersize,
+									AudioTrack.MODE_STATIC);
 							audioTrack.write(audioArray, 44, buffersize);
 							audioTrackInitiated = true;
 						} else {
-							showErrorMessage("Unsuported format", "Could not find file-header");
+							showErrorMessage("Unsuported format",
+									"Could not find file-header");
 							return;
 						}
 					} else {
-						showErrorMessage("Unsuported format", "Unsupported file-type");
+						showErrorMessage("Unsuported format",
+								"Unsupported file-type");
 						return;
 					}
 				} else {
@@ -307,8 +331,9 @@ public class PlayActivity extends ActionBarActivity {
 	}
 
 	/**
-	 * Denna tråd kommer att används för att räkna ut medelvärted av amplituder under ett viss intervall och sedan
-	 * anropa Bluetoothservice för att skicka detta värde till arduino.
+	 * Denna tråd kommer att används för att räkna ut medelvärted av amplituder
+	 * under ett viss intervall och sedan anropa Bluetoothservice för att skicka
+	 * detta värde till arduino.
 	 * 
 	 * @author Patrik
 	 * 
@@ -338,9 +363,12 @@ public class PlayActivity extends ActionBarActivity {
 
 			sum /= 133;
 
-			sum = ((int) Math.pow(sum, 1.18)) - 70;
+			sum = ((int) Math.pow(sum, 4)) / 750000 - 10;
 			if (sum < 0) {
 				sum = 0;
+			}
+			if (sum > 255) {
+				sum = 255;
 			}
 			return sum;
 		}

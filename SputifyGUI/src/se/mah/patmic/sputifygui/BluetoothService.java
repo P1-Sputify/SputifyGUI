@@ -299,24 +299,6 @@ public class BluetoothService {
 		public void run() {
 			Log.i(TAG, "Run manageConnectionThread");
 			setState(STATE_CONNECTED); // Nu ska man kunna skicka
-			write("Bajs på dig".getBytes());
-			byte[] buffer = new byte[1024]; // En buffert som används för att ta emot data
-
-			int bytes; // En räknare som innehåller längden på det som tagit emots
-
-			// Så länge som tråden är aktiv ska den lyssna efter inkommande
-			// meddelande. Detta kommer alltså blockera allt annat i Run metoden.
-			while (true) {
-				try {
-					bytes = mmInStream.read();
-				} catch (IOException e) {
-					Log.e(TAG, "Connection Lost", e);
-					connectionLost();
-					break; // Man kan inte läsa från inströmmen om det inte
-							// finns någon ansluting.
-				}
-				// TODO Skicka meddelande till gui.
-			}
 		}
 		
 		public void write(byte[] buffer) {
