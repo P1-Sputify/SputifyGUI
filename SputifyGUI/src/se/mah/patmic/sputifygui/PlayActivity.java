@@ -130,7 +130,9 @@ public class PlayActivity extends ActionBarActivity {
 		if (audioTrackInitiated) {
 			audioTrack.pause();
 			sendSamplesThread.interrupt();
+			sendSamplesThread = null;
 			seekBarThread.interrupt();
+			seekBarThread = null;
 		} else {
 			showErrorMessage("Error", "File not loaded");
 		}
