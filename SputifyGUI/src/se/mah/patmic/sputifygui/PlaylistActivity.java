@@ -116,7 +116,7 @@ public class PlaylistActivity extends ActionBarActivity {
 	}
 
 	/**
-	 * Use this class to start a thread that waits for a playlist to be downloaded
+	 * For making a thread that waits for a playlist to be downloaded
 	 * 
 	 * @author Michel Falk
 	 * 

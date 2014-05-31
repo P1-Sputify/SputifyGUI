@@ -157,8 +157,8 @@ public class LoginActivity extends ActionBarActivity {
 	}
 
 	/**
-	 * Use this class to make a background thread that waits until a login attempt yields a result,
-	 * then calls the <code>loginResult()</code> on the main thread
+	 * For making a thread that waits until a login attempt yields a result, then calls the
+	 * <code>loginResult()</code> on the main thread
 	 * 
 	 * @author Michel Falk
 	 * 
@@ -182,8 +182,8 @@ public class LoginActivity extends ActionBarActivity {
 	}
 
 	/**
-	 * Use this class to make a background thread that waits until a connection attempt yields a
-	 * result and then tries to log in again by calling <code>login()</code> on the main thread
+	 * For making a thread that waits until a connection attempt yields a result and then tries to
+	 * log in again by calling <code>login()</code> on the main thread
 	 * 
 	 * @author Michel Falk
 	 * 

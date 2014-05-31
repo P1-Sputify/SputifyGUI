@@ -38,7 +38,7 @@ public class PlayActivity extends ActionBarActivity {
 	private byte[] audioArray;
 	private BluetoothService btService;
 	private Thread sendSamplesThread, seekBarThread;
-	private double nrOfAudioFramesInTrack;
+	private double nrOfAudioSamplesInTrack;
 
 	@Override
 	public void onCreate(Bundle savedInstanceState) {
@@ -158,14 +158,18 @@ public class PlayActivity extends ActionBarActivity {
 	 * Call when whole file is played
 	 */
 	private void endOfFile() {
+		audioPlaying = false;
+		
+		// switch to play-button
+		runOnUiThread(new Runnable() {
+			@Override
+			public void run() {
+				buttonPlayPause.setBackgroundResource(R.drawable.play);
+			}
+		});
 
 		// reloads the audio data so song can be played again
 		audioTrack.reloadStaticData();
-
-		// switch to play-button
-		buttonPlayPause.setBackgroundResource(R.drawable.play);
-
-		audioPlaying = false;
 	}
 
 	/**
@@ -180,9 +184,11 @@ public class PlayActivity extends ActionBarActivity {
 		runOnUiThread(new Runnable() {
 			@Override
 			public void run() {
+				// If there is an alert dialog showing, closes it
 				if (currentAlertDialog != null && currentAlertDialog.isShowing()) {
 					currentAlertDialog.cancel();
 				}
+				// Show new alert dialog
 				currentAlertDialog = new AlertDialog.Builder(PlayActivity.this).setTitle(title).setMessage(message)
 						.setNeutralButton(android.R.string.ok, null).setIcon(android.R.drawable.ic_dialog_alert).show();
 			}
@@ -210,21 +216,19 @@ public class PlayActivity extends ActionBarActivity {
 		return super.onOptionsItemSelected(item);
 	}
 
+	/**
+	 * For making a thread that waits until the audio-track has downloaded and shows matching alert
+	 * dialogs
+	 * 
+	 * @author Michel Falk
+	 * 
+	 */
 	private class waitingForDownloadThread implements Runnable {
 		public void run() {
+
+			// wait until track starts downloading and show this in an alert dialog
 			if (tcpConnection.getRequestedTrackStatus() == TCPConnection.TRACK_NOT_RECIEVED) {
-				runOnUiThread(new Runnable() {
-					@Override
-					public void run() {
-						if (currentAlertDialog != null && currentAlertDialog.isShowing()) {
-							currentAlertDialog.cancel();
-						}
-						currentAlertDialog = new AlertDialog.Builder(PlayActivity.this).setTitle("No track")
-								.setMessage("Track not recieved from server")
-								.setNeutralButton(android.R.string.ok, null)
-								.setIcon(android.R.drawable.ic_dialog_alert).show();
-					}
-				});
+				showErrorMessage("No track", "Track not recieved from server");
 				while (tcpConnection.getRequestedTrackStatus() == TCPConnection.TRACK_NOT_RECIEVED) {
 					try {
 						Thread.sleep(200);
@@ -234,13 +238,16 @@ public class PlayActivity extends ActionBarActivity {
 				}
 			}
 
+			// wait until track is done downloading and show this in an alert dialog
 			if (tcpConnection.getRequestedTrackStatus() == TCPConnection.TRACK_DOWNLOADING) {
 				runOnUiThread(new Runnable() {
 					@Override
 					public void run() {
+						// If there is an alert dialog showing, closes it
 						if (currentAlertDialog != null && currentAlertDialog.isShowing()) {
 							currentAlertDialog.cancel();
 						}
+						// show new alert dialog, not closable by user
 						currentAlertDialog = new AlertDialog.Builder(PlayActivity.this).setTitle("Downloading")
 								.setMessage("Downloading track from server").setCancelable(false)
 								.setIcon(android.R.drawable.ic_dialog_alert).show();
@@ -255,6 +262,7 @@ public class PlayActivity extends ActionBarActivity {
 				}
 			}
 
+			// If there is an alert dialog showing, closes it
 			runOnUiThread(new Runnable() {
 				@Override
 				public void run() {
@@ -264,29 +272,44 @@ public class PlayActivity extends ActionBarActivity {
 				}
 			});
 
+			// Download done, starting thread to try and initiate the audio
 			new Thread(new InitAudioTrackThread()).start();
 		}
 	}
 
+	/**
+	 * For making a thread that reads the header of a WAV file and initiates an AudioTrack object
+	 * accordingly
+	 * 
+	 * @author Michel Falk
+	 * 
+	 */
 	private class InitAudioTrackThread implements Runnable {
 		@Override
 		public void run() {
+
+			// only run if not initiated yet
 			if (!audioTrackInitiated) {
+
+				// checks if the track has been downloaded
 				if (tcpConnection.getRequestedTrackStatus() == TCPConnection.TRACK_RECIEVED) {
-					audioArray = tcpConnection.getRequestedTrack();
+
 					int channels, encoding, samplerate, buffersize;
 					int tempChannels = -1, tempSampleSize = -1;
 
-					// Kollar att filen är i WAV format
+					// gets the track from the tcp object
+					audioArray = tcpConnection.getRequestedTrack();
+
+					// Checks that the file is WAV format
 					if (new String(audioArray, 0, 4).equals("RIFF") && new String(audioArray, 8, 4).equals("WAVE")) {
 
-						// Kontrollerar att filen innehåller format beskrivning
+						// Checks that the file contains a format description
 						if (new String(audioArray, 12, 4).equals("fmt ")) {
 
-							// kontrollerar att audio är kodad som PCM
+							// Checks that the file is coded as PCM
 							if (audioArray[20] == 1 && audioArray[21] == 0) {
 
-								// kontrollerar bits/sample
+								// Checks bits/sample
 								if (audioArray[34] == 16 && audioArray[35] == 0) {
 									encoding = AudioFormat.ENCODING_PCM_16BIT;
 									tempSampleSize = 16;
@@ -305,7 +328,7 @@ public class PlayActivity extends ActionBarActivity {
 								return;
 							}
 
-							// kontrollerar att audio är mono eller stereo
+							// Checks if the audio is mono or stereo
 							if (audioArray[22] == 2 && audioArray[23] == 0) {
 								channels = AudioFormat.CHANNEL_OUT_STEREO;
 								tempChannels = 2;
@@ -321,7 +344,7 @@ public class PlayActivity extends ActionBarActivity {
 
 							int temp;
 
-							// Räknar ut samplerate
+							// Read samplerate
 							temp = audioArray[24] & 0xFF;
 							samplerate = temp;
 							temp = audioArray[25] & 0xFF;
@@ -331,7 +354,7 @@ public class PlayActivity extends ActionBarActivity {
 							temp = audioArray[27] & 0xFF;
 							samplerate += temp * 0x1000000;
 
-							// Räknar ut hur stor bufferten ska vara
+							// Reads data size to determine required size for the buffer
 							temp = audioArray[40] & 0xFF;
 							buffersize = temp;
 							temp = audioArray[41] & 0xFF;
@@ -341,12 +364,16 @@ public class PlayActivity extends ActionBarActivity {
 							temp = audioArray[43] & 0xFF;
 							buffersize += temp * 0x1000000;
 
-							nrOfAudioFramesInTrack = (buffersize * 8) / tempSampleSize / tempChannels;
+							// Calculates how many samples the file contains
+							nrOfAudioSamplesInTrack = (buffersize * 8) / tempSampleSize / tempChannels;
 
-							// Initierar audioTrack
+							// Initiates audioTrack
 							audioTrack = new AudioTrack(AudioManager.STREAM_MUSIC, samplerate, channels, encoding,
 									buffersize, AudioTrack.MODE_STATIC);
+
+							// Write audio data to audioTrack
 							audioTrack.write(audioArray, 44, buffersize);
+
 							audioTrackInitiated = true;
 						} else {
 							showErrorMessage("Unsuported format", "Could not find file-header");
@@ -364,10 +391,10 @@ public class PlayActivity extends ActionBarActivity {
 	}
 
 	/**
-	 * This thread will calculate averages of the amplitudes in the WAV array and send appropriately
-	 * scaled results to the arduino over bluetooth
+	 * For making a thread that will calculate averages of the amplitudes in the WAV array and send
+	 * appropriately scaled results to the arduino over bluetooth
 	 * 
-	 * @author Patrik & Michel
+	 * @author Patrik Larsson & Michel Falk
 	 * 
 	 */
 	private class SendSamplesThread implements Runnable {
@@ -427,10 +454,15 @@ public class PlayActivity extends ActionBarActivity {
 			int average;
 			int temp;
 
+			// if the size of the samples is 16 bits
 			if (sampleSize16bit) {
+
+				// Create buffers to read the byte array as an array of shorts
 				ByteBuffer bb = ByteBuffer.wrap(array, startIndex, count);
 				bb.order(ByteOrder.LITTLE_ENDIAN);
 				ShortBuffer sb = bb.asShortBuffer();
+
+				// Calculate sum of the absolute values of the specified part of the array
 				while (sb.hasRemaining()) {
 					temp = sb.get();
 					if (temp < 0) {
@@ -439,29 +471,35 @@ public class PlayActivity extends ActionBarActivity {
 					}
 				}
 
+				// calculate average
 				average = (int) (sum / count);
+
+				// scale the result
 				average = (int) ((int) Math.pow(average, 4) / 4000000000000000l);
-				if (average < 0) {
-					average = 0;
-				}
-				if (average > 255) {
-					average = 255;
-				}
-			} else {
+			}
+
+			// if the size of the samples is 8 bits
+			else {
+				// Calculate sum of the specified part of the array
 				for (int i = startIndex; i < startIndex + count && i < array.length; i++) {
 					temp = array[i] & 0xFF;
 					sum += temp;
 				}
+
+				// calculate average
 				average = (int) (sum / count);
+
+				// scale the result
 				average = ((int) Math.pow(average, 4)) / 12500000 - 10;
-				if (average < 0) {
-					average = 0;
-				}
-				if (average > 255) {
-					average = 255;
-				}
 			}
 
+			// make sure the results are within the correct range
+			if (average < 0) {
+				average = 0;
+			}
+			if (average > 255) {
+				average = 255;
+			}
 			return average;
 		}
 
@@ -471,36 +509,47 @@ public class PlayActivity extends ActionBarActivity {
 			boolean sampleSize16bit = audioTrack.getAudioFormat() == AudioFormat.ENCODING_PCM_16BIT;
 			final int ledFrequencyInHz = 60;
 
+			// calculates how long the thread has to sleep between updates to get the specified
+			// frequency, sleep is not optimal for this, but exactness is not that important in this
+			// instance
 			int sleepTime = (int) ((1f / ledFrequencyInHz) * 1000);
 
+			// calculates how many samples there are between each update of the LEDs
 			int nrOfSamples = audioTrack.getSampleRate() / ledFrequencyInHz;
-
 			if (audioTrack.getChannelConfiguration() == AudioFormat.CHANNEL_OUT_STEREO) {
 				nrOfSamples *= 2;
 			}
 
+			// continue sending data until audio is stopped or end of array is reached
 			while (audioPlaying && (i < audioArray.length - 133 - 44)) {
+
+				// sleep to get approximately the correct frequency
 				try {
 					Thread.sleep(sleepTime);
 				} catch (InterruptedException e) {
 					e.printStackTrace();
 				}
 
+				// calculates average
 				int average = calculateAverage(audioArray, sampleSize16bit, i + 44, nrOfSamples + 44);
 
+				// send result the the arduino by bluetooth
 				btService.write(average);
 
+				// update pointer
 				i = audioTrack.getPlaybackHeadPosition();
 			}
 
+			// turn off the LEDs when music stops
 			btService.write(0);
 		}
 	}
 
 	/**
-	 * Thread to update the seekbar, it also calls endOfFile() when the the song is done playing
+	 * For making a thread to update the seekbar, it also calls endOfFile() when the the song is
+	 * done playing
 	 * 
-	 * @author Michel
+	 * @author Michel Falk
 	 * 
 	 */
 	private class SeekBarThread implements Runnable {
@@ -511,16 +560,22 @@ public class PlayActivity extends ActionBarActivity {
 			int pos;
 			double percentage;
 			int progress;
+
+			// update seekbar while music is playing
 			while (audioPlaying) {
+
+				// calculate progress and set the seekbar accordingly
 				pos = audioTrack.getPlaybackHeadPosition();
-				percentage = pos / nrOfAudioFramesInTrack;
+				percentage = pos / nrOfAudioSamplesInTrack;
 				progress = (int) (max * percentage);
 				seekBar.setProgress(progress);
 
-				if (pos >= nrOfAudioFramesInTrack) {
+				// if the end of file is reached, call appropriate method
+				if (pos >= nrOfAudioSamplesInTrack) {
 					endOfFile();
 				}
 
+				// sleep 250ms to update about 4 times every second
 				try {
 					Thread.sleep(250);
 				} catch (InterruptedException e) {

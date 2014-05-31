@@ -14,7 +14,7 @@ import server.Track;
 /**
  * A singleton that gives access to the server connection
  * 
- * @author Michel
+ * @author Michel Falk
  * 
  */
 public enum TCPConnection {
@@ -168,8 +168,7 @@ public enum TCPConnection {
 	}
 
 	/**
-	 * This runnable will be started on a background thread, and do all the communication with the
-	 * server
+	 * For making the thread that does all the communication with the server
 	 * 
 	 * @author Michel Falk
 	 * 
@@ -292,8 +291,8 @@ public enum TCPConnection {
 										requestedTrackStatus = TRACK_NOT_RECIEVED;
 									}
 								}
-							} 
-							
+							}
+
 							// let thread sleep if there is no incoming track request
 							else {
 								try {
@@ -302,8 +301,8 @@ public enum TCPConnection {
 									e.printStackTrace();
 								}
 							}
-						} 
-						
+						}
+
 						// let thread sleep if track is received
 						else {
 							try {
