@@ -11,6 +11,12 @@ import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import server.Track;
 
+/**
+ * A singleton that gives access to the server connection
+ * 
+ * @author Michel
+ * 
+ */
 public enum TCPConnection {
 	INSTANCE;
 
@@ -53,10 +59,22 @@ public enum TCPConnection {
 	public final static int TRACK_DOWNLOADING = 42;
 	public final static int TRACK_RECIEVED = 43;
 
+	/**
+	 * Call this method to start connecting to the server
+	 * 
+	 * @param connMgr
+	 *            the ConnectivityManager of the operating system
+	 * @param ipAddress
+	 *            IP-address of the server you want to connect to
+	 * @param portNr
+	 *            port to connect on
+	 */
 	public void connect(ConnectivityManager connMgr, String ipAddress, int portNr) {
 		this.connMgr = connMgr;
 		this.ipAddress = ipAddress;
 		this.portNr = portNr;
+
+		// closes old sockets
 		if (socket != null && socket.isConnected()) {
 			try {
 				socket.close();
@@ -66,28 +84,49 @@ public enum TCPConnection {
 			}
 		}
 
+		// starts the communication thread if it hasn't been started yet
 		if (!commThreadStarted) {
 			new Thread(new communicationThread()).start();
 			commThreadStarted = true;
 		}
 	}
 
+	/**
+	 * give the connection a username and password to connect to when a connection is available
+	 * 
+	 * @param user
+	 *            the username to log in with
+	 * @param pass
+	 *            the password to log in with
+	 */
 	public void login(String user, String pass) {
 		this.user = user;
 		this.pass = pass;
 		loginStatus = LOGGING_IN;
 	}
 
+	/**
+	 * @return the playlist that has been downloaded, if none has been downloaded returns null
+	 */
 	public Hashtable<Integer, Track> getPlayList() {
 		return playList;
 	}
 
+	/**
+	 * Request a track to download from the server
+	 * 
+	 * @param trackNr
+	 *            the tracks id number
+	 */
 	public void requestTrack(int trackNr) {
 		trackRequest = trackNr;
 		incomingTrackRequest = true;
 		requestedTrackStatus = TRACK_DOWNLOADING;
 	}
 
+	/**
+	 * @return the requested track, if it's not downloaded yet, returns null
+	 */
 	public byte[] getRequestedTrack() {
 		if (requestedTrackStatus == TRACK_RECIEVED) {
 			return track;
@@ -96,27 +135,56 @@ public enum TCPConnection {
 		}
 	}
 
+	/**
+	 * @return the status of connection to server, can be TCPConnection.NOT_CONNECTED,
+	 *         TCPConnection.ATTEMPTING_TO_CONNECT or TCPConnection.CONNECTED
+	 */
 	public int getConnectStatus() {
 		return connectStatus;
 	}
 
+	/**
+	 * @return the login status, can be TCPConnection.NOT_LOGGED_IN, TCPConnection.LOGGING_IN or
+	 *         TCPConnection.LOGGED_IN
+	 */
 	public int getLoginStatus() {
 		return loginStatus;
 	}
 
+	/**
+	 * @return the status of the playlist, can be TCPConnection.LIST_NOT_RECIEVED,
+	 *         TCPConnection.LIST_DOWNLOADING or TCPConnection.LIST_RECIEVED
+	 */
 	public int getPlayListStatus() {
 		return playListStatus;
 	}
 
+	/**
+	 * @return the status of the requested track, can be TCPConnection.TRACK_NOT_RECIEVED,
+	 *         TCPConnection.TRACK_DOWNLOADING or TCPConnection.TRACK_RECIEVED
+	 */
 	public int getRequestedTrackStatus() {
 		return requestedTrackStatus;
 	}
 
+	/**
+	 * This runnable will be started on a background thread, and do all the communication with the
+	 * server
+	 * 
+	 * @author Michel Falk
+	 * 
+	 */
 	private class communicationThread implements Runnable {
 		public void run() {
 			while (true) {
+
+				// Checks if the socket is connected
 				if (socket != null && socket.isConnected()) {
+
+					// If connected but not logged in
 					if (loginStatus != LOGGED_IN) {
+
+						// check if a login request has been made
 						if (user != null && pass != null) {
 							loginStatus = LOGGING_IN;
 							String[] loginArray = new String[2];
@@ -124,14 +192,26 @@ public enum TCPConnection {
 							loginArray[1] = pass;
 
 							try {
+								// send login request to server
 								oos.writeObject(loginArray);
+
+								// wait for server reply
 								String reply = (String) ois.readObject();
+
+								// if login success
 								if (reply.equalsIgnoreCase("login success")) {
 									loginStatus = LOGGED_IN;
-								} else if (reply.equalsIgnoreCase("login failed")) {
+								}
+
+								// if login failed, remove invalid login credentials to prevent
+								// automatically attempting to log in again
+								else if (reply.equalsIgnoreCase("login failed")) {
 									loginStatus = NOT_LOGGED_IN;
 									user = pass = null;
-								} else {
+								}
+
+								// just in something unexpected is received
+								else {
 									loginStatus = NOT_LOGGED_IN;
 									user = pass = null;
 									System.out.println("Server sent unkown reply: " + reply);
@@ -142,12 +222,22 @@ public enum TCPConnection {
 								user = pass = null;
 							}
 						}
-					} else { // loginStatus == LOGGED_IN && socket connected
+					}
+
+					// if connected to server and logged in
+					else {
+
+						// if no playlist is recieved yet
 						if (playListStatus != LIST_RECIEVED) {
 							playListStatus = LIST_DOWNLOADING;
 							try {
+								// request a playlist from the server
 								oos.writeObject("send playlist");
+
+								// wait until playlist is recieved
 								Object obj = ois.readObject();
+
+								// make sure that a playlist was recieved
 								if (obj instanceof Hashtable) {
 									playList = (Hashtable<Integer, Track>) obj;
 									playListStatus = LIST_RECIEVED;
@@ -158,18 +248,35 @@ public enum TCPConnection {
 								e.printStackTrace();
 								playListStatus = LIST_NOT_RECIEVED;
 							}
-						} else if (requestedTrackStatus != TRACK_RECIEVED) {
+						}
+						// If connected, logged in and playlist is recieved
+						else if (requestedTrackStatus != TRACK_RECIEVED) {
+							// If track is not recieved yet, check if there is a request
 							if (incomingTrackRequest) {
+
+								// check if the same track was requested again, no need to download
+								// again since its still in the buffer
 								if (track != null && currentTrack == trackRequest) {
 									requestedTrackStatus = TRACK_RECIEVED;
-								} else {
+								}
+
+								// if a new track was requested
+								else {
 									downloadingTrackNr = trackRequest;
 									requestedTrackStatus = TRACK_DOWNLOADING;
 									try {
+										// request the track from server
 										oos.writeObject(Integer.valueOf(downloadingTrackNr));
+
+										// receive the track from server
 										Object obj = ois.readObject();
+
+										// check that the correct form of data was recieved
 										if (obj instanceof byte[]) {
 											track = (byte[]) obj;
+
+											// check if the downloaded track is the right one or if
+											// another request has come in
 											currentTrack = downloadingTrackNr;
 											if (currentTrack == trackRequest) {
 												requestedTrackStatus = TRACK_RECIEVED;
@@ -185,19 +292,36 @@ public enum TCPConnection {
 										requestedTrackStatus = TRACK_NOT_RECIEVED;
 									}
 								}
-							} else { // !incomingTrackRequest
+							} 
+							
+							// let thread sleep if there is no incoming track request
+							else {
 								try {
-									Thread.sleep(50);
+									Thread.sleep(100);
 								} catch (InterruptedException e) {
 									e.printStackTrace();
 								}
 							}
+						} 
+						
+						// let thread sleep if track is received
+						else {
+							try {
+								Thread.sleep(100);
+							} catch (InterruptedException e) {
+								e.printStackTrace();
+							}
 						}
 					}
-				} else { // socket not connected
+				}
+
+				// socket not connected
+				else {
 					connectStatus = ATTEMPTING_TO_CONNECT;
 					try {
 						if (connMgr != null) {
+
+							// wait until the android device has an internet connection
 							NetworkInfo networkInfo = connMgr.getActiveNetworkInfo();
 							while (networkInfo == null || !networkInfo.isConnected()) {
 								try {
@@ -207,9 +331,14 @@ public enum TCPConnection {
 								}
 								networkInfo = connMgr.getActiveNetworkInfo();
 							}
+
+							// connect to the server
 							socket = new Socket(InetAddress.getByName(ipAddress), portNr);
+
+							// create streams
 							ois = new ObjectInputStream(socket.getInputStream());
 							oos = new ObjectOutputStream(socket.getOutputStream());
+
 							connectStatus = CONNECTED;
 							loginStatus = NOT_LOGGED_IN;
 						} else {

@@ -1,5 +1,9 @@
 package se.mah.patmic.sputifygui;
 
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
+import java.nio.ShortBuffer;
+
 import android.support.v7.app.ActionBarActivity;
 import android.media.AudioFormat;
 import android.media.AudioManager;
@@ -11,21 +15,19 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.SeekBar;
 import android.widget.TextView;
-import android.widget.Toast;
 import android.app.AlertDialog;
 import android.content.Intent;
 import android.view.View.OnClickListener;
 
 /**
+ * This activity plays a chosen song by pressing a play button and pausing the song by pressing the
+ * pause button, it also sends values to the a spütify bluetooth unit to make LEDs light up
  * 
- * @author Andreas
- * 
- *         This class plays songs by pressing a play button and pausing the song by pressing the pause button
+ * @author Andreas Stridh & Michel Falk
  */
 public class PlayActivity extends ActionBarActivity {
 
-	private Button buttonPlayStop; // This button is both play and pause, it only
-									// changes icon
+	private Button buttonPlayPause; // This button is both play and pause, it only changes icon
 	private SeekBar seekBar;
 	private boolean audioPlaying = false;
 	private boolean audioTrackInitiated = false;
@@ -38,106 +40,142 @@ public class PlayActivity extends ActionBarActivity {
 	private Thread sendSamplesThread, seekBarThread;
 	private double nrOfAudioFramesInTrack;
 
+	@Override
 	public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.activity_play);
 
+		// gets the instances of server and bluetooth connections
 		tcpConnection = TCPConnection.INSTANCE;
 		btService = BluetoothService.getBluetoothService();
+
+		// starts a tread that loads the audio data
 		new Thread(new InitAudioTrackThread()).start();
 
+		// sets the track name
 		Intent startIntent = getIntent();
 		trackName = startIntent.getStringExtra(PlaylistActivity.EXTRA_TRACK_NAME);
 
-		try {
-			initViews();
-			setListeners();
-		} catch (Exception e) {
-			e.printStackTrace();
-			Toast.makeText(getApplicationContext(), e.getClass().getName() + " " + e.getMessage(), Toast.LENGTH_LONG)
-					.show();
-		}
+		// initialize views and give them listeners
+		initViews();
+		setListeners();
 	}
 
 	@Override
 	public void onBackPressed() {
 		super.onBackPressed();
-		pauseAudio();
-		audioTrack.flush();
+
+		// turns off music when going back to playlist
+		try {
+			pauseAudio();
+			audioTrack.flush();
+		} catch (IllegalStateException e) {
+			e.printStackTrace();
+		}
 	}
 
 	/**
-	 * Create the buttons
+	 * Initialize the activities views
 	 */
 	private void initViews() {
+
+		// set the track name
 		if (trackName != null) {
 			TextView songName = (TextView) findViewById(R.id.song_title);
 			songName.setText(trackName);
 		}
 
-		buttonPlayStop = (Button) findViewById(R.id.ButtonPlayStop);
-		buttonPlayStop.setBackgroundResource(R.drawable.play);
+		// give the play/pause button an icon
+		buttonPlayPause = (Button) findViewById(R.id.ButtonPlayPause);
+		buttonPlayPause.setBackgroundResource(R.drawable.play);
 
+		// disable user interaction on seekbar
 		seekBar = (SeekBar) findViewById(R.id.audio_seek_bar);
 		seekBar.setEnabled(false);
 	}
 
 	/**
-	 * Set listeners to the buttons
+	 * Set listeners to the button
 	 */
 	public void setListeners() {
-		buttonPlayStop.setOnClickListener(new OnClickListener() {
+		buttonPlayPause.setOnClickListener(new OnClickListener() {
 			public void onClick(View v) {
-				buttonPlayStopClick();
+
+				// if the button is clicked when audio is playing, pause gets called, if its not
+				// playing when the button is clicked play gets called
+				if (audioPlaying) {
+					pauseAudio();
+				} else {
+					playAudio();
+				}
 			}
 		});
 	}
 
 	/**
-	 * Change the icon of buttonPlayStop
+	 * Start playing the music
 	 */
-	private void buttonPlayStopClick() {
-		if (!audioPlaying) {
-			// While music is playing the stop icon will show
-			buttonPlayStop.setBackgroundResource(R.drawable.pause);
-			playAudio();
+	private void playAudio() {
+		if (audioTrackInitiated) {
+
+			// start to play audio
+			audioTrack.play();
 			audioPlaying = true;
+
+			// While music is playing the pause icon will show
+			buttonPlayPause.setBackgroundResource(R.drawable.pause);
+
+			// start thread to send data to bluetooth
+			sendSamplesThread = new Thread(new SendSamplesThread());
+			sendSamplesThread.start();
+
+			// start a thread to update the seekbar
+			seekBarThread = new Thread(new SeekBarThread());
+			seekBarThread.start();
 		} else {
-			// While music is paused the play icon will show
-			buttonPlayStop.setBackgroundResource(R.drawable.play);
-			pauseAudio();
-			audioPlaying = false;
+			showErrorMessage("Error", "File not loaded");
 		}
 	}
 
 	/**
-	 * Plays the music
+	 * Pauses the music
 	 */
-	private void playAudio() {
-		if (audioTrackInitiated) {
-			audioTrack.play();
-			sendSamplesThread = new Thread(new SendSamplesThread());
-			sendSamplesThread.start();
-			seekBarThread = new Thread(new SeekBarThread());
-			seekBarThread.start();
-			
-		} else {
-			showErrorMessage("Error", "File not loaded");
-		}
-	}
-
 	private void pauseAudio() {
 		if (audioTrackInitiated) {
+
+			// pauses the audio
 			audioTrack.pause();
-			sendSamplesThread.interrupt();
-			sendSamplesThread = null;
-			seekBarThread.interrupt();
-			seekBarThread = null;
+			audioPlaying = false;
+
+			// While music is paused the play icon will show
+			buttonPlayPause.setBackgroundResource(R.drawable.play);
 		} else {
 			showErrorMessage("Error", "File not loaded");
 		}
 	}
 
+	/**
+	 * Call when whole file is played
+	 */
+	private void endOfFile() {
+
+		// reloads the audio data so song can be played again
+		audioTrack.reloadStaticData();
+
+		// switch to play-button
+		buttonPlayPause.setBackgroundResource(R.drawable.play);
+
+		audioPlaying = false;
+	}
+
+	/**
+	 * Display an alert dialog with an OK button, can be called from background thread
+	 * 
+	 * @param title
+	 *            String with the title for the dialog
+	 * @param message
+	 *            String with the message for the dialog
+	 */
 	private void showErrorMessage(final String title, final String message) {
 		runOnUiThread(new Runnable() {
 			@Override
@@ -326,16 +364,17 @@ public class PlayActivity extends ActionBarActivity {
 	}
 
 	/**
-	 * Denna tråd kommer att används för att räkna ut medelvärted av amplituder under ett viss intervall och sedan
-	 * anropa Bluetoothservice för att skicka detta värde till arduino.
+	 * This thread will calculate averages of the amplitudes in the WAV array and send appropriately
+	 * scaled results to the arduino over bluetooth
 	 * 
-	 * @author Patrik
+	 * @author Patrik & Michel
 	 * 
 	 */
 	private class SendSamplesThread implements Runnable {
 
 		/**
-		 * Metoden används för att räkna ut medelvärdet
+		 * Gammal metod för att räkna ut medelvärdet, den är hårdkodad för 8000Hz 8bit mono, om den
+		 * nya fungerar, ta bort denna
 		 * 
 		 * @param startIndex
 		 *            Det första värdet i intervallet
@@ -343,10 +382,11 @@ public class PlayActivity extends ActionBarActivity {
 		 *            Det sista värdet i intervallet
 		 * @return En byte som innehåller medelvärtet.
 		 */
-		public int calculateAverage(byte[] array, int startIndex, int endIndex) {
+		@Deprecated
+		public int calculateAverage(byte[] array, int startIndex, int count) {
 			int sum = 0;
 			int temp;
-			for (int i = startIndex; i < endIndex && i < array.length; i++) {
+			for (int i = startIndex; i < (startIndex + count) && i < array.length; i++) {
 				temp = array[i];
 				if (temp < 0) {
 					temp *= -1;
@@ -355,7 +395,7 @@ public class PlayActivity extends ActionBarActivity {
 				sum += temp;
 			}
 
-			sum /= 133;
+			sum /= count;
 
 			sum = ((int) Math.pow(sum, 4)) / 750000 - 10;
 			if (sum < 0) {
@@ -367,25 +407,102 @@ public class PlayActivity extends ActionBarActivity {
 			return sum;
 		}
 
+		/**
+		 * Method to calculate an average value for a part of a WAV array and scale the result down
+		 * to 0-255 on an exponential scale
+		 * 
+		 * @param array
+		 *            WAV array to be used
+		 * @param sampleSize16bit
+		 *            true if the array is to be read as 16 bit values, if false it will be read as
+		 *            8 bit values
+		 * @param startIndex
+		 *            index to start calculations from
+		 * @param count
+		 *            number indexes to read
+		 * @return result of the calculation
+		 */
+		public int calculateAverage(byte[] array, boolean sampleSize16bit, int startIndex, int count) {
+			long sum = 0;
+			int average;
+			int temp;
+
+			if (sampleSize16bit) {
+				ByteBuffer bb = ByteBuffer.wrap(array, startIndex, count);
+				bb.order(ByteOrder.LITTLE_ENDIAN);
+				ShortBuffer sb = bb.asShortBuffer();
+				while (sb.hasRemaining()) {
+					temp = sb.get();
+					if (temp < 0) {
+						temp *= -1;
+						temp--;
+					}
+				}
+
+				average = (int) (sum / count);
+				average = (int) ((int) Math.pow(average, 4) / 4000000000000000l);
+				if (average < 0) {
+					average = 0;
+				}
+				if (average > 255) {
+					average = 255;
+				}
+			} else {
+				for (int i = startIndex; i < startIndex + count && i < array.length; i++) {
+					temp = array[i] & 0xFF;
+					sum += temp;
+				}
+				average = (int) (sum / count);
+				average = ((int) Math.pow(average, 4)) / 12500000 - 10;
+				if (average < 0) {
+					average = 0;
+				}
+				if (average > 255) {
+					average = 255;
+				}
+			}
+
+			return average;
+		}
+
 		@Override
 		public void run() {
 			int i = audioTrack.getPlaybackHeadPosition();
-			while (i < audioArray.length - 133 - 44) {
+			boolean sampleSize16bit = audioTrack.getAudioFormat() == AudioFormat.ENCODING_PCM_16BIT;
+			final int ledFrequencyInHz = 60;
+
+			int sleepTime = (int) ((1f / ledFrequencyInHz) * 1000);
+
+			int nrOfSamples = audioTrack.getSampleRate() / ledFrequencyInHz;
+
+			if (audioTrack.getChannelConfiguration() == AudioFormat.CHANNEL_OUT_STEREO) {
+				nrOfSamples *= 2;
+			}
+
+			while (audioPlaying && (i < audioArray.length - 133 - 44)) {
 				try {
-					Thread.sleep(16);
+					Thread.sleep(sleepTime);
 				} catch (InterruptedException e) {
-					return;
+					e.printStackTrace();
 				}
 
-				int average = calculateAverage(audioArray, i + 44, i + 133 + 44);
+				int average = calculateAverage(audioArray, sampleSize16bit, i + 44, nrOfSamples + 44);
 
 				btService.write(average);
 
 				i = audioTrack.getPlaybackHeadPosition();
 			}
+
+			btService.write(0);
 		}
 	}
 
+	/**
+	 * Thread to update the seekbar, it also calls endOfFile() when the the song is done playing
+	 * 
+	 * @author Michel
+	 * 
+	 */
 	private class SeekBarThread implements Runnable {
 
 		@Override
@@ -394,13 +511,18 @@ public class PlayActivity extends ActionBarActivity {
 			int pos;
 			double percentage;
 			int progress;
-			while (true) {
+			while (audioPlaying) {
 				pos = audioTrack.getPlaybackHeadPosition();
 				percentage = pos / nrOfAudioFramesInTrack;
 				progress = (int) (max * percentage);
 				seekBar.setProgress(progress);
+
+				if (pos >= nrOfAudioFramesInTrack) {
+					endOfFile();
+				}
+
 				try {
-					Thread.sleep(500);
+					Thread.sleep(250);
 				} catch (InterruptedException e) {
 					e.printStackTrace();
 				}

@@ -14,7 +14,7 @@
         android:layout_gravity="center_horizontal"/>
 
     <Button
-        android:id="@+id/ButtonPlayStop"
+        android:id="@+id/ButtonPlayPause"
         android:layout_width="170dp"
         android:layout_height="168dp"
         android:padding="15dp"

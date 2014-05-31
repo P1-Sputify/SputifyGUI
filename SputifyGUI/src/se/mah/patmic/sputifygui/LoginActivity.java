@@ -14,6 +14,12 @@ import android.view.View.OnClickListener;
 import android.widget.Button;
 import android.widget.EditText;
 
+/**
+ * The first activity in the Spütify app, it's used get login credentials from the user
+ * 
+ * @author Michel Falk
+ * 
+ */
 public class LoginActivity extends ActionBarActivity {
 	private String ipAddress = "195.178.234.227";
 	private int portNr = 57005;
@@ -31,13 +37,16 @@ public class LoginActivity extends ActionBarActivity {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.activity_login);
 
+		// Tells the tcp connection to connect to the server
 		connMgr = (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
 		tcpConnection = TCPConnection.INSTANCE;
 		tcpConnection.connect(connMgr, ipAddress, portNr);
 
+		// Get the input fields for username and password
 		editUser = (EditText) findViewById(R.id.Edit_UserName);
 		editPassword = (EditText) findViewById(R.id.Edit_Password);
 
+		// Gives the button a listener that starts the login procedure when clicked
 		loginButton = (Button) findViewById(R.id.button_login);
 		loginButton.setOnClickListener(new OnClickListener() {
 			@Override
@@ -50,17 +59,32 @@ public class LoginActivity extends ActionBarActivity {
 		});
 	}
 
+	/**
+	 * This method attempts to log in, it takes the login credentials from the class variables
+	 * <code>username</code> and <code>password</code> to simplify retrying to log in when the
+	 * server is slow, this method has to be run on the main thread
+	 */
 	private void login() {
+
+		// If there is an alert dialog showing, closes it
 		if (currentAlertDialog != null && currentAlertDialog.isShowing()) {
 			currentAlertDialog.cancel();
 		}
 
+		// If app is still trying to connect to the server, shows an alert dialog to tell this to
+		// the user and starts a
+		// thread that will try to log in again as soon as a connection has been established
 		if (tcpConnection.getConnectStatus() == TCPConnection.ATTEMPTING_TO_CONNECT) {
 			currentAlertDialog = new AlertDialog.Builder(LoginActivity.this).setTitle("Connecting")
 					.setMessage("Still trying to connect to server").setCancelable(false)
 					.setIcon(android.R.drawable.ic_dialog_alert).show();
 			new Thread(new waitConnectionThread()).start();
-		} else if (tcpConnection.getConnectStatus() == TCPConnection.NOT_CONNECTED) {
+		}
+
+		// If app is not connected to the server, shows an alert dialog to tell this to the user
+		// with the option to try
+		// to connect again
+		else if (tcpConnection.getConnectStatus() == TCPConnection.NOT_CONNECTED) {
 			currentAlertDialog = new AlertDialog.Builder(LoginActivity.this).setTitle("Not connected")
 					.setMessage("Could not connect to server")
 					.setPositiveButton(R.string.reconnect_button, new DialogInterface.OnClickListener() {
@@ -72,7 +96,12 @@ public class LoginActivity extends ActionBarActivity {
 						}
 					}).setNegativeButton(android.R.string.cancel, null).setIcon(android.R.drawable.ic_dialog_alert)
 					.show();
-		} else if (tcpConnection.getConnectStatus() == TCPConnection.CONNECTED) {
+		}
+
+		// If the app is connected try to log in, shows an alert dialog to tell this to the user and
+		// start a thread that
+		// will wait for the login attempt to yield a result
+		else if (tcpConnection.getConnectStatus() == TCPConnection.CONNECTED) {
 			tcpConnection.login(username, password);
 			new Thread(new waitForLoginConfirmationThread()).start();
 			currentAlertDialog = new AlertDialog.Builder(LoginActivity.this).setTitle("Logging in")
@@ -81,15 +110,26 @@ public class LoginActivity extends ActionBarActivity {
 		}
 	}
 
+	/**
+	 * Called when a login attempt has yielded a result, sends the user to the next activity if
+	 * login attempt succeded or tells the user if it failed, this method has to be run on the main
+	 * thread
+	 */
 	private void loginResult() {
+
+		// If there is an alert dialog showing, closes it
 		if (currentAlertDialog != null && currentAlertDialog.isShowing()) {
 			currentAlertDialog.cancel();
 		}
+
+		// If the login attempt succeeded start the next activity
 		if (tcpConnection.getLoginStatus() == TCPConnection.LOGGED_IN) {
 			Intent intent = new Intent(LoginActivity.this, SelectDeviceActivity.class);
-			// Intent intent = new Intent(LoginActivity.this, PlaylistActivity.class);
 			startActivity(intent);
-		} else if (tcpConnection.getLoginStatus() == TCPConnection.NOT_LOGGED_IN) {
+		}
+
+		// If the login attempt failed, tell the user with an alert dialog
+		else if (tcpConnection.getLoginStatus() == TCPConnection.NOT_LOGGED_IN) {
 			currentAlertDialog = new AlertDialog.Builder(LoginActivity.this).setTitle("Login failed")
 					.setMessage("Make sure you spelled your username & password correctly")
 					.setNeutralButton(android.R.string.ok, null).setIcon(android.R.drawable.ic_dialog_alert).show();
@@ -116,6 +156,13 @@ public class LoginActivity extends ActionBarActivity {
 		return super.onOptionsItemSelected(item);
 	}
 
+	/**
+	 * Use this class to make a background thread that waits until a login attempt yields a result,
+	 * then calls the <code>loginResult()</code> on the main thread
+	 * 
+	 * @author Michel Falk
+	 * 
+	 */
 	private class waitForLoginConfirmationThread implements Runnable {
 		public void run() {
 			while (tcpConnection.getLoginStatus() == TCPConnection.LOGGING_IN) {
@@ -134,6 +181,13 @@ public class LoginActivity extends ActionBarActivity {
 		}
 	}
 
+	/**
+	 * Use this class to make a background thread that waits until a connection attempt yields a
+	 * result and then tries to log in again by calling <code>login()</code> on the main thread
+	 * 
+	 * @author Michel Falk
+	 * 
+	 */
 	private class waitConnectionThread implements Runnable {
 		public void run() {
 			while (tcpConnection.getConnectStatus() == TCPConnection.ATTEMPTING_TO_CONNECT) {
