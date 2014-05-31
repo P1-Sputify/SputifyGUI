@@ -12,7 +12,8 @@ import android.util.Log;
 
 /**
  * This class will manage connection to other bluetooth devices and incomming
- * and outgoing messages.
+ * and outgoing messages. This class is a designed with a singelton design pattern
+ * and there can only be one unicqe instance of this object.
  * 
  * @author Patrik
  * 
@@ -20,30 +21,23 @@ import android.util.Log;
 public class BluetoothService {
 	private static BluetoothService uniqInstance;
 	private static final String TAG = "BluetoothService";
-	private final BluetoothAdapter mBTAdapter; // Om denna är null så stödjer inte mobilen bluetooth
 	private static final UUID MY_UUID = UUID.fromString("00001101-0000-1000-8000-00805F9B34FB");
-	private static String mAdress; // Adressen till Bluetooth modulen
 	// Konstaner som indikerar bluetooth State
 	public static final int STATE_NONE = 0; // Ingetting händer
 	public static final int STATE_CONNECTING = 1; // Mobilen försöker ansluta till någon bluetooth enhets
 	public static final int STATE_CONNECTED = 2; // Nu finns en Anslutning
+	
 	private ConnectThread mConnectThread;
 	private manageConnectionThread mManageConnectionThread;
 	private int mState;
 	
-	/**
-	 * Konstruktor som skapar sätter upp bluetoothService objektet
-	 */
-	private BluetoothService() {
-		Log.i(TAG, "Creating Bluetooth Sevice");
-		 mBTAdapter = BluetoothAdapter.getDefaultAdapter();
-		 start();
-	}
+	
 	
 	/**
-	 * Hämtar en referens till BluetoothService objektet.
+	 * Gets a referemce to the BluetoothService object. If there is no object a new one will be created
+	 * 
 	 * @return
-	 * 		Ett bluetoothService object
+	 * 		A bluetooth Service object
 	 */
 	public static synchronized BluetoothService getBluetoothService() {
 		if(uniqInstance == null) {
@@ -54,11 +48,9 @@ public class BluetoothService {
 	}
 
 	/**
-	 * Använd denna metod för att sätta vilket läge objektet befinner sig i.
-	 * 
+	 * This method sets a integer that is representing the current state of the object
 	 * @param state
-	 * 		Använd någon av konstanterna STATE_CONNECTED, STATE_CONNECTING, STATE_NONE
-	 *            
+	 * 		An integer. Use the constants STATE_NONE, STATE_CONNECTING or STATE_CONNECTED
 	 */
 	public synchronized void setState(int state) {
 		Log.d(TAG, "setState() " + mState + "--> " + state);
@@ -66,11 +58,10 @@ public class BluetoothService {
 	}
 
 	/**
-	 * Retunerar objektets nuvarande läge. Använd konstanterna STATE_CONNECTED, STATE_CONNECTING, STATE_NONE
-	 * för att jämnföra vad som retuneras
+	 * Returns a integer with a integer that is representing the state of the object. You can use the constansts STATE_NONE, STATE_CONENCTED or STATE_STATE_CONNECTING
+	 * to compare with
 	 * @return
-	 * 		En integer som representerar vilket läge som objektet befinner sig i.
-	 * 		
+	 * 		An integer contatining the state of the object
 	 */
 	public synchronized int getState() {
 		return mState;
@@ -78,7 +69,7 @@ public class BluetoothService {
 	
 	
 	/**
-	 * Metoden används när en ny ansluting ska göras. Den tar bort de nuvrande anslutningarna.
+	 * This method is used to start the bluetooth connection. and sets the state to NONE
 	 */
 	public synchronized void start() {
 		Log.d(TAG, "start() ");
@@ -99,24 +90,11 @@ public class BluetoothService {
 	}
 
 	/**
-	 * Metoden försöker göra en anslutning till Bluetooth enheten som man anger
-	 * @param device
-	 * 		En referens till det bluetoothDevice objekt man vill ansluta till.
+	 * The method is used to create a connection thread and attempt to connect to a bluetooth Device
 	 */
 	public synchronized void connect(BluetoothDevice device) {
 		Log.d(TAG, "Trying to initiate connection to: " + device);
-		if (mState == STATE_CONNECTING) {
-			if (mConnectThread != null) {
-				mConnectThread.cancel();
-				mConnectThread = null;
-			}
-
-		}
-
-		if (mManageConnectionThread != null) {
-			mManageConnectionThread.cancel();
-			mManageConnectionThread = null;
-		}
+		start();
 
 		mConnectThread = new ConnectThread(device);
 		mConnectThread.start(); // Startar en connection
@@ -124,88 +102,60 @@ public class BluetoothService {
 	}
 	
 	/**
-	 * Startar den tråd som har hand om skicking och ta emot av data
+	 * The method is used to create the thread that is used to recieve and send data over bluetooth
 	 * @param socket
-	 * 		Den socket som skapats av connectionThread.
+	 * 		A reference bluetoothSocket object
 	 * @param device
-	 * 		Måste kontrollera om denna parameter ens behövs.
+	 * 		The reference to the BluetoothDevice object you want to connect to
 	 */
 	public synchronized void startManageConnectionThread(BluetoothSocket socket,
 			BluetoothDevice device) {
-		// Avbryt tråden som har gjort en ansluting
-		if (mConnectThread != null) {
-			mConnectThread.cancel();
-			mConnectThread = null;
-		}
-
-		// Avbryt tråd som har ansluting om sådan finns
-		if (mManageConnectionThread != null) {
-			mManageConnectionThread.cancel();
-			mManageConnectionThread = null;
-		}
+		start();
 
 		// Starta en ny manageConnectThread
 		mManageConnectionThread = new manageConnectionThread(socket);
-		mManageConnectionThread.start();
-	}
-
-	/**
-	 * Denna metod används för att stoppa alla anslutningar.
-	 */
-	public synchronized void stop() {
-		Log.d(TAG, "stop");
-
-		// Avbryt ConnectThread
-		if (mConnectThread != null) {
-			mConnectThread.cancel();
-			mConnectThread = null;
-		}
-
-		// Avbryt manageConnected thread
-		if (mManageConnectionThread != null) {
-			mManageConnectionThread.cancel();
-			mManageConnectionThread = null;
-		}
-
-		setState(STATE_NONE);
+//		mManageConnectionThread.start();
 	}
 	
 	/**
-	 * Denna metod används för att logga ifall anslutingen förlorats.
+	 * This method is used to indicate that the connection has been lost and stops all threads
 	 */
 	private void connectionLost() {
 		Log.d(TAG, "The bluetooth connection was lost");
 		setState(STATE_NONE);
+		start(); // Denna används för att garbage collectorn ska ta bort oanänvda resurser och så att man kan göra ny connection.
 	}
 
 	/**
-	 * Denna metod används för att logga att anslutningen misslyckades 
+	 * This method is used to indicate that the connection failed
 	 */
 	private void connectionFailed() {
 		setState(STATE_NONE);
 		Log.d(TAG, "The Bluetooth connection failed");
+		start();
 	}
 	
-	public void write(int message) {
-		try {
-			mManageConnectionThread.mmOutStream.write(message);
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		};
+	/**
+	 * Use this method to send the values over bluetooth
+	 * @param message
+	 * 		An integer contating the value you want to send
+	 */
+	public void write(int value) {
+			mManageConnectionThread.write(value);
+		
 	}
 
 	/**
-	 * Denna tråd används för att skapa en anslutnign mellan mobilen och en Bluetooth enhet
+	 *	This class is used to make a connection between two bluetooth devices. It extends the thread class.
 	 * @author Patrik
 	 */
 	private class ConnectThread extends Thread {
 		private final BluetoothSocket mmSocket;
 		private final BluetoothDevice mmDevice;
 		/**
-		 * Konstruktorn sätter upp tråden. Den försöker en socket
+		 * The constructor sets up the object before running the thread. It tries to create a bluetoothsocket
 		 * @param device
-		 * 		En referens till den bluetooth enhet man vill ansluta till
+		 * 		The reference to a bluetoothDevice object
 		 */
 		public ConnectThread(BluetoothDevice device) {
 			mmDevice = device;
@@ -251,7 +201,7 @@ public class BluetoothService {
 		}
 		
 		/**
-		 * Denna metod ska anropas när man är klar med socketen. Kan lämpligtvis anropas i onDestroy eller liknade
+		 * This method should be called when you are done with the socket.
 		 */
 		public void cancel() {
 			try {
@@ -264,51 +214,66 @@ public class BluetoothService {
 	}
 	
 	/**
-	 * Denna tråd används för att hantera överförning av data över bluetooth
+	 * This class is used to manage reciving and send data
 	 * @author Patrik
 	 *
 	 */
-	public class manageConnectionThread extends Thread {
+	private class manageConnectionThread extends Thread{
 		private final BluetoothSocket mmSocket;
-		private final InputStream mmInStream;
+//		private final InputStream mmInStream;
 		private final OutputStream mmOutStream;
 		/**
-		 * Konstruktorn sätter upp tråden
+		 * The constructor sets upp the socket and the out and in stream for the data.
 		 * @param socket
-		 * 		Den socket man vill använda för att föra över datan
+		 * 		A reference to a bluetoothDevice socket
 		 */
 		public manageConnectionThread(BluetoothSocket socket) {
 			Log.d(TAG, "create manageConnectionThread");
 			mmSocket = socket;
-			InputStream tmpIn = null;
+//			InputStream tmpIn = null;
 			OutputStream tmpOut = null;
+//			byte[] buffer = new byte[1024];
+//			int bytes;
 
 			// Hämta utström och inström från bluetoohsocket
 			try {
-				tmpIn = mmSocket.getInputStream();
+//				tmpIn = mmSocket.getInputStream();
 				tmpOut = mmSocket.getOutputStream();
 			} catch (IOException e) {
 				Log.e(TAG, "Temp streams not created", e);
 			}
 
 			mmOutStream = tmpOut;
-			mmInStream = tmpIn;
+//			mmInStream = tmpIn;
 		}
 
-		@Override
-		public void run() {
-			Log.i(TAG, "Run manageConnectionThread");
-			setState(STATE_CONNECTED); // Nu ska man kunna skicka
-		}
-		
-		public void write(byte[] buffer) {
+//		@Override
+//		public void run() {
+//			Log.i(TAG, "Run manageConnectionThread");
+//			setState(STATE_CONNECTED); // Nu ska man kunna skicka
+////			while(true) { // Man ska hela tiden ligga och titta efter inkoommande data
+////				try {
+////					bytes = mmInStream.read();
+////				} catch(IOException e) {
+////					Log.e(TAG, "Connection lost");
+////					connectionLost();
+////				}	
+////			}
+//		}
+		/**
+		 * This method sends a value over bluetooth
+		 * @param message
+		 */
+		public void write(int value) {
 			try {
-				mmOutStream.write(buffer);
+				mmOutStream.write(value);
 			} catch (IOException e) {
 				Log.e(TAG, "Exception during write", e);
 			}
 		}
-
+		/**
+		 * This method is used to close the socket.
+		 */
 		public void cancel() {
 			try {
 				mmSocket.close();

@@ -14,11 +14,11 @@ import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.ListView;
 import android.widget.TextView;
+import android.widget.Toast;
 import android.widget.AdapterView.OnItemClickListener;
 
 /**
- * Klassen används för att välja ett item i en lista. I detta fall ska man v�lja
- * en bluetooth enhet och skicka tillbaka adressen.
+ * This class is used to display a list for choosing a bluetooth device that is paried with the phone.
  * 
  * @author Patrik
  * 
@@ -39,8 +39,9 @@ public class SelectDeviceActivity extends Activity {
 	
 
 	/**
-	 * Anropas när aktiviten skapas. Skapar listan och lägger till items i
-	 * listan.
+	 * This method is called when the activity is created.
+	 * The list is loaded with items and we also try to enable bluetooth if it´s not
+	 * already activited.
 	 */
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
@@ -56,14 +57,16 @@ public class SelectDeviceActivity extends Activity {
 				initList();
 			}
 		} else if (mBtAdapter == null) {
-			// TODO Something
+			Toast.makeText(this, "Device not supporting bluetooth", Toast.LENGTH_LONG).show();
+			Intent intent = new Intent(SelectDeviceActivity.this,
+					PlaylistActivity.class);
+			startActivity(intent);
 		}
 	}
 
 	/**
-	 * En lysnnare för vad som ska hända när man klickar på ett item i listan.
-	 * Skickar tillbaka en sträng som innehåller en adress till en bluetooth
-	 * device till den aktiviten som startade denna.
+	 * A listner for the list. The user chooses a item that is representing a bluetooth device object
+	 * and the app will try to connect to that device.
 	 */
 	private OnItemClickListener mDeviceClickListener = new OnItemClickListener() {
 		public void onItemClick(AdapterView<?> av, View v, int arg2, long arg3) {
@@ -78,13 +81,8 @@ public class SelectDeviceActivity extends Activity {
 																	// strängen
 			Log.d(TAG, info + "\n" + address);
 
-			// Skapar en intent så att man kan skicka tillbaka data
 			Intent intent = new Intent(SelectDeviceActivity.this,
 					PlaylistActivity.class);
-			intent.putExtra(EXTRA_DEVICE_ADRESS, address);
-			Log.d(TAG,
-					"Data in intent"
-							+ intent.getExtras().getString(EXTRA_DEVICE_ADRESS));
 			
 			mBtService = BluetoothService.getBluetoothService();
 			mBtService.connect(mBtAdapter.getRemoteDevice(address));
@@ -93,10 +91,9 @@ public class SelectDeviceActivity extends Activity {
 	};
 
 	/**
-	 * Metoden används för att kontrollera om mobilen har bluetooth och ifall
-	 * den är aktivierad. Den kan även aktivera bluetooth om inte så är fallet
-	 * 
-	 * @return En boolean som är false om mobilen inte har bluetooth annars true
+	 * The method is used to enable bluetooth.
+	 * @return
+	 * 		If the method suceeded to enable bluetooth true otherwise false
 	 */
 	public boolean enableBt() {
 		if (BluetoothAdapter.getDefaultAdapter() == null) {
@@ -118,7 +115,9 @@ public class SelectDeviceActivity extends Activity {
 		}
 		super.onActivityResult(requestCode, resultCode, data);
 	}
-
+	/**
+	 *  The method loads the list with items
+	 */
 	public void initList() {
 		mPairedDevicesArrayAdapter = new ArrayAdapter<String>(this,
 				android.R.layout.simple_list_item_1);
