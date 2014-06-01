@@ -295,8 +295,8 @@ public class PlayActivity extends ActionBarActivity {
 			if (!audioTrackInitiated) {
 
 				// makes sure that the sendSamplesThread isn't running
-				if(sendSamplesThread != null){
-					while (sendSamplesThread.isAlive()){
+				if (sendSamplesThread != null) {
+					while (sendSamplesThread.isAlive()) {
 						try {
 							Thread.sleep(10);
 						} catch (InterruptedException e) {
@@ -304,7 +304,7 @@ public class PlayActivity extends ActionBarActivity {
 						}
 					}
 				}
-				
+
 				// checks if the track has been downloaded
 				if (tcpConnection.getRequestedTrackStatus() == TCPConnection.TRACK_RECIEVED) {
 
@@ -559,7 +559,7 @@ public class PlayActivity extends ActionBarActivity {
 			}
 
 			// continue sending data until audio is stopped or end of array is reached
-			while (audioPlaying && (i < audioArray.length - 133 - 44)) {
+			while (audioPlaying && (i < audioArray.length - 133 - 44) && audioTrack != null) {
 
 				// sleep to get approximately the correct frequency
 				try {
