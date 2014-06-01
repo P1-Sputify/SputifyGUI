@@ -169,7 +169,10 @@ public class PlayActivity extends ActionBarActivity {
 		});
 
 		// reloads the audio data so song can be played again
-		audioTrack.reloadStaticData();
+		audioTrack.stop();
+		audioTrack = null;
+		audioTrackInitiated = false;
+		new Thread(new InitAudioTrackThread()).start();
 	}
 
 	/**
@@ -294,6 +297,20 @@ public class PlayActivity extends ActionBarActivity {
 				// checks if the track has been downloaded
 				if (tcpConnection.getRequestedTrackStatus() == TCPConnection.TRACK_RECIEVED) {
 
+					runOnUiThread(new Runnable() {
+						@Override
+						public void run() {
+							// If there is an alert dialog showing, closes it
+							if (currentAlertDialog != null && currentAlertDialog.isShowing()) {
+								currentAlertDialog.cancel();
+							}
+							// show new alert dialog, not closable by user
+							currentAlertDialog = new AlertDialog.Builder(PlayActivity.this).setTitle("Initializing")
+									.setMessage("Initializing the audio data").setCancelable(false)
+									.setIcon(android.R.drawable.ic_dialog_alert).show();
+						}
+					});
+					
 					int channels, encoding, samplerate, buffersize;
 					int tempChannels = -1, tempSampleSize = -1;
 
@@ -375,6 +392,16 @@ public class PlayActivity extends ActionBarActivity {
 							audioTrack.write(audioArray, 44, buffersize);
 
 							audioTrackInitiated = true;
+							
+							runOnUiThread(new Runnable() {
+								@Override
+								public void run() {
+									// If there is an alert dialog showing, closes it
+									if (currentAlertDialog != null && currentAlertDialog.isShowing()) {
+										currentAlertDialog.cancel();
+									}
+								}
+							});
 						} else {
 							showErrorMessage("Unsuported format", "Could not find file-header");
 							return;
