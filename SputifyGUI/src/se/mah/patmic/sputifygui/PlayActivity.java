@@ -294,6 +294,17 @@ public class PlayActivity extends ActionBarActivity {
 			// only run if not initiated yet
 			if (!audioTrackInitiated) {
 
+				// makes sure that the sendSamplesThread isn't running
+				if(sendSamplesThread != null){
+					while (sendSamplesThread.isAlive()){
+						try {
+							Thread.sleep(10);
+						} catch (InterruptedException e) {
+							e.printStackTrace();
+						}
+					}
+				}
+				
 				// checks if the track has been downloaded
 				if (tcpConnection.getRequestedTrackStatus() == TCPConnection.TRACK_RECIEVED) {
 
