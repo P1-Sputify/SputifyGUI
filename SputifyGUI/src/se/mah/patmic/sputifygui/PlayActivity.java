@@ -159,7 +159,7 @@ public class PlayActivity extends ActionBarActivity {
 	 */
 	private void endOfFile() {
 		audioPlaying = false;
-		
+
 		// switch to play-button
 		runOnUiThread(new Runnable() {
 			@Override
@@ -310,7 +310,7 @@ public class PlayActivity extends ActionBarActivity {
 									.setIcon(android.R.drawable.ic_dialog_alert).show();
 						}
 					});
-					
+
 					int channels, encoding, samplerate, buffersize;
 					int tempChannels = -1, tempSampleSize = -1;
 
@@ -392,7 +392,7 @@ public class PlayActivity extends ActionBarActivity {
 							audioTrack.write(audioArray, 44, buffersize);
 
 							audioTrackInitiated = true;
-							
+
 							runOnUiThread(new Runnable() {
 								@Override
 								public void run() {
@@ -564,7 +564,9 @@ public class PlayActivity extends ActionBarActivity {
 				btService.write(average);
 
 				// update pointer
-				i = audioTrack.getPlaybackHeadPosition();
+				if (audioTrack != null) {
+					i = audioTrack.getPlaybackHeadPosition();
+				}
 			}
 
 			// turn off the LEDs when music stops
