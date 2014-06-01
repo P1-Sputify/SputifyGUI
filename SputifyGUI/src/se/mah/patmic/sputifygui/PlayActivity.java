@@ -475,7 +475,7 @@ public class PlayActivity extends ActionBarActivity {
 				average = (int) (sum / count);
 
 				// scale the result
-				average = (int) ((int) Math.pow(average, 4) / 4000000000000000l);
+				average = (int) ((long) Math.pow(average, 4) / 4000000000000000l);
 			}
 
 			// if the size of the samples is 8 bits
