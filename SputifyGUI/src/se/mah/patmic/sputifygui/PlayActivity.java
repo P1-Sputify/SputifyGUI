@@ -20,14 +20,16 @@ import android.content.Intent;
 import android.view.View.OnClickListener;
 
 /**
- * This activity plays a chosen song by pressing a play button and pausing the song by pressing the
- * pause button, it also sends values to the a spütify bluetooth unit to make LEDs light up
+ * This activity plays a chosen song by pressing a play button and pausing the
+ * song by pressing the pause button, it also sends values to the a spütify
+ * bluetooth unit to make LEDs light up
  * 
  * @author Andreas Stridh & Michel Falk
  */
 public class PlayActivity extends ActionBarActivity {
 
-	private Button buttonPlayPause; // This button is both play and pause, it only changes icon
+	private Button buttonPlayPause; // This button is both play and pause, it
+									// only changes icon
 	private SeekBar seekBar;
 	private boolean audioPlaying = false;
 	private boolean audioTrackInitiated = false;
@@ -66,12 +68,8 @@ public class PlayActivity extends ActionBarActivity {
 		super.onBackPressed();
 
 		// turns off music when going back to playlist
-		try {
-			pauseAudio();
-			audioTrack.flush();
-		} catch (IllegalStateException e) {
-			e.printStackTrace();
-		}
+		audioTrack.stop();
+		audioTrack.flush();
 	}
 
 	/**
@@ -101,7 +99,8 @@ public class PlayActivity extends ActionBarActivity {
 		buttonPlayPause.setOnClickListener(new OnClickListener() {
 			public void onClick(View v) {
 
-				// if the button is clicked when audio is playing, pause gets called, if its not
+				// if the button is clicked when audio is playing, pause gets
+				// called, if its not
 				// playing when the button is clicked play gets called
 				if (audioPlaying) {
 					pauseAudio();
@@ -176,7 +175,8 @@ public class PlayActivity extends ActionBarActivity {
 	}
 
 	/**
-	 * Display an alert dialog with an OK button, can be called from background thread
+	 * Display an alert dialog with an OK button, can be called from background
+	 * thread
 	 * 
 	 * @param title
 	 *            String with the title for the dialog
@@ -220,8 +220,8 @@ public class PlayActivity extends ActionBarActivity {
 	}
 
 	/**
-	 * For making a thread that waits until the audio-track has downloaded and shows matching alert
-	 * dialogs
+	 * For making a thread that waits until the audio-track has downloaded and
+	 * shows matching alert dialogs
 	 * 
 	 * @author Michel Falk
 	 * 
@@ -229,7 +229,8 @@ public class PlayActivity extends ActionBarActivity {
 	private class waitingForDownloadThread implements Runnable {
 		public void run() {
 
-			// wait until track starts downloading and show this in an alert dialog
+			// wait until track starts downloading and show this in an alert
+			// dialog
 			if (tcpConnection.getRequestedTrackStatus() == TCPConnection.TRACK_NOT_RECIEVED) {
 				showErrorMessage("No track", "Track not recieved from server");
 				while (tcpConnection.getRequestedTrackStatus() == TCPConnection.TRACK_NOT_RECIEVED) {
@@ -241,7 +242,8 @@ public class PlayActivity extends ActionBarActivity {
 				}
 			}
 
-			// wait until track is done downloading and show this in an alert dialog
+			// wait until track is done downloading and show this in an alert
+			// dialog
 			if (tcpConnection.getRequestedTrackStatus() == TCPConnection.TRACK_DOWNLOADING) {
 				runOnUiThread(new Runnable() {
 					@Override
@@ -281,8 +283,8 @@ public class PlayActivity extends ActionBarActivity {
 	}
 
 	/**
-	 * For making a thread that reads the header of a WAV file and initiates an AudioTrack object
-	 * accordingly
+	 * For making a thread that reads the header of a WAV file and initiates an
+	 * AudioTrack object accordingly
 	 * 
 	 * @author Michel Falk
 	 * 
@@ -382,7 +384,8 @@ public class PlayActivity extends ActionBarActivity {
 							temp = audioArray[27] & 0xFF;
 							samplerate += temp * 0x1000000;
 
-							// Reads data size to determine required size for the buffer
+							// Reads data size to determine required size for
+							// the buffer
 							temp = audioArray[40] & 0xFF;
 							buffersize = temp;
 							temp = audioArray[41] & 0xFF;
@@ -407,7 +410,8 @@ public class PlayActivity extends ActionBarActivity {
 							runOnUiThread(new Runnable() {
 								@Override
 								public void run() {
-									// If there is an alert dialog showing, closes it
+									// If there is an alert dialog showing,
+									// closes it
 									if (currentAlertDialog != null && currentAlertDialog.isShowing()) {
 										currentAlertDialog.cancel();
 									}
@@ -429,8 +433,9 @@ public class PlayActivity extends ActionBarActivity {
 	}
 
 	/**
-	 * For making a thread that will calculate averages of the amplitudes in the WAV array and send
-	 * appropriately scaled results to the arduino over bluetooth
+	 * For making a thread that will calculate averages of the amplitudes in the
+	 * WAV array and send appropriately scaled results to the arduino over
+	 * bluetooth
 	 * 
 	 * @author Patrik Larsson & Michel Falk
 	 * 
@@ -438,8 +443,8 @@ public class PlayActivity extends ActionBarActivity {
 	private class SendSamplesThread implements Runnable {
 
 		/**
-		 * Gammal metod för att räkna ut medelvärdet, den är hårdkodad för 8000Hz 8bit mono, om den
-		 * nya fungerar, ta bort denna
+		 * Gammal metod för att räkna ut medelvärdet, den är hårdkodad för
+		 * 8000Hz 8bit mono, om den nya fungerar, ta bort denna
 		 * 
 		 * @param startIndex
 		 *            Det första värdet i intervallet
@@ -473,14 +478,14 @@ public class PlayActivity extends ActionBarActivity {
 		}
 
 		/**
-		 * Method to calculate an average value for a part of a WAV array and scale the result down
-		 * to 0-255 on an exponential scale
+		 * Method to calculate an average value for a part of a WAV array and
+		 * scale the result down to 0-255 on an exponential scale
 		 * 
 		 * @param array
 		 *            WAV array to be used
 		 * @param sampleSize16bit
-		 *            true if the array is to be read as 16 bit values, if false it will be read as
-		 *            8 bit values
+		 *            true if the array is to be read as 16 bit values, if false
+		 *            it will be read as 8 bit values
 		 * @param startIndex
 		 *            index to start calculations from
 		 * @param count
@@ -495,32 +500,51 @@ public class PlayActivity extends ActionBarActivity {
 			// if the size of the samples is 16 bits
 			if (sampleSize16bit) {
 
-				// Create buffers to read the byte array as an array of shorts
-				ByteBuffer bb = ByteBuffer.wrap(array, startIndex, count);
-				bb.order(ByteOrder.LITTLE_ENDIAN);
-				ShortBuffer sb = bb.asShortBuffer();
-
-				// Calculate sum of the absolute values of the specified part of the array
-				while (sb.hasRemaining()) {
-					temp = sb.get();
+				// Calculate sum of the specified part of the array
+				for (int i = startIndex; i < (startIndex + count) && (i - 1) < array.length; i += 2) {
+					temp = array[i] & 0xFF;
+					temp += array[i + 1] * 0x100;
 					if (temp < 0) {
 						temp *= -1;
 						temp--;
 					}
+					sum += temp;
 				}
+
+//				// Create buffers to read the byte array as an array of shorts
+//				ByteBuffer bb = ByteBuffer.wrap(array, startIndex, count);
+//				// bb.order(ByteOrder.LITTLE_ENDIAN);
+//				ShortBuffer sb = bb.asShortBuffer();
+//
+//				// Calculate sum of the absolute values of the specified part of
+//				// the array
+//				while (sb.hasRemaining()) {
+//					temp = sb.get();
+//					if (temp < 0) {
+//						temp *= -1;
+//						temp--;
+//					}
+//
+//					sum += temp;
+//				}
 
 				// calculate average
 				average = (int) (sum / count);
 
 				// scale the result
-				average = (int) ((long) Math.pow(average, 4) / 4000000000000000l);
+				average = (int) ((long) Math.pow(average, 3) / 80000000000l);
 			}
 
 			// if the size of the samples is 8 bits
 			else {
+
 				// Calculate sum of the specified part of the array
-				for (int i = startIndex; i < startIndex + count && i < array.length; i++) {
-					temp = array[i] & 0xFF;
+				for (int i = startIndex; i < (startIndex + count) && i < array.length; i++) {
+					temp = array[i];
+					if (temp < 0) {
+						temp *= -1;
+						temp--;
+					}
 					sum += temp;
 				}
 
@@ -528,7 +552,7 @@ public class PlayActivity extends ActionBarActivity {
 				average = (int) (sum / count);
 
 				// scale the result
-				average = ((int) Math.pow(average, 4)) / 12500000 - 10;
+				average = ((int) Math.pow(average, 4)) / 750000 - 10;
 			}
 
 			// make sure the results are within the correct range
@@ -547,18 +571,22 @@ public class PlayActivity extends ActionBarActivity {
 			boolean sampleSize16bit = audioTrack.getAudioFormat() == AudioFormat.ENCODING_PCM_16BIT;
 			final int ledFrequencyInHz = 60;
 
-			// calculates how long the thread has to sleep between updates to get the specified
-			// frequency, sleep is not optimal for this, but exactness is not that important in this
+			// calculates how long the thread has to sleep between updates to
+			// get the specified
+			// frequency, sleep is not optimal for this, but exactness is not
+			// that important in this
 			// instance
 			int sleepTime = (int) ((1f / ledFrequencyInHz) * 1000);
 
-			// calculates how many samples there are between each update of the LEDs
+			// calculates how many samples there are between each update of the
+			// LEDs
 			int nrOfSamples = audioTrack.getSampleRate() / ledFrequencyInHz;
 			if (audioTrack.getChannelConfiguration() == AudioFormat.CHANNEL_OUT_STEREO) {
 				nrOfSamples *= 2;
 			}
 
-			// continue sending data until audio is stopped or end of array is reached
+			// continue sending data until audio is stopped or end of array is
+			// reached
 			while (audioPlaying && (i < audioArray.length - 133 - 44) && audioTrack != null) {
 
 				// sleep to get approximately the correct frequency
@@ -569,7 +597,7 @@ public class PlayActivity extends ActionBarActivity {
 				}
 
 				// calculates average
-				int average = calculateAverage(audioArray, sampleSize16bit, i + 44, nrOfSamples + 44);
+				int average = calculateAverage(audioArray, sampleSize16bit, i + 44, nrOfSamples);
 
 				// send result the the arduino by bluetooth
 				btService.write(average);
@@ -586,8 +614,8 @@ public class PlayActivity extends ActionBarActivity {
 	}
 
 	/**
-	 * For making a thread to update the seekbar, it also calls endOfFile() when the the song is
-	 * done playing
+	 * For making a thread to update the seekbar, it also calls endOfFile() when
+	 * the the song is done playing
 	 * 
 	 * @author Michel Falk
 	 * 
